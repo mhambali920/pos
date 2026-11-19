@@ -17,14 +17,14 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 - [x] Complete architectural & technical documentation (`docs/*.md` + ADRs)
 
 ## Phase 1 — Foundation
-- [ ] Modular monolith infrastructure (`app/Modules/*`, `ApiResponse`, `Idempotency`, `EnsureStoreAccess`)
-- [ ] Authentication (Laravel Sanctum: login, logout, refresh, me)
-- [ ] Authorization (Spatie Permission: 10 default roles + granular permissions)
-- [ ] Organization & Store management (code, timezone, operating hours, tax config)
-- [ ] User management (CRUD, activate/deactivate, reset password, role/store/warehouse assignment)
-- [ ] Audit Log foundation (append-only event logger)
-- [ ] System Settings module
-- [ ] Frontend base UI (Auth, Sidebar Navigation, Dark/Light Mode, Store Switcher)
+- [x] Modular monolith infrastructure (`app/Modules/*`, `ApiResponse`, `Idempotency`, `EnsureStoreAccess`)
+- [x] Authentication (Laravel Sanctum: login, logout, refresh, me)
+- [x] Authorization (Spatie Permission: 10 default roles + granular permissions)
+- [x] Organization & Store management (code, timezone, operating hours, tax config)
+- [x] User management (CRUD, activate/deactivate, reset password, role/store/warehouse assignment)
+- [x] Audit Log foundation (append-only event logger)
+- [x] System Settings module
+- [x] Frontend base UI (Auth, Sidebar Navigation, Dark/Light Mode, Store Switcher)
 
 ## Phase 2 — Master Data
 - [ ] Categories (hierarchical), Brands, Units of Measurement (+ conversions)
@@ -82,3 +82,4 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 | Version | Date | Phase | Author | Summary of Changes |
 | :--- | :--- | :--- | :--- | :--- |
 | `1.0.0` | `2026-11-19` | Phase 0 | AI Architect | Initial master feature checklist across all 8 phases; Phase 0 marked complete. |
+| `1.1.0` | `2026-11-19` | Phase 1 | AI Architect | Marked all Phase 1 — Foundation deliverables complete after passing backend & frontend verification. |
