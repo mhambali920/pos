@@ -33,6 +33,7 @@
 | `2026-11-19` | Phase 0 | Workspace audit & initial architectural blueprint (`docs/IMPLEMENTATION_PLAN.md`) | Reviewed & approved | `Done` |
 | `2026-11-19` | Phase 0 | Clean reset workspace, `git init -b main`, fresh install Laravel 13.43 (`backend/`) & Next.js (`frontend/`) | `php artisan test` (2 passed), `npm run lint` (0 errors) | `Done` |
 | `2026-11-19` | Phase 0 | Generated complete `docs/` suite (14 core docs + 3 ADRs) with per-document track records | Cross-checked consistency | `Done` |
+| `2026-11-19` | Phase 0 | Created root `AGENTS.md` compliance rule and installed Laravel Boost (`v2.10.4`) in `backend/` | `php artisan boost:install` & `php artisan test` passed | `Done` |
 
 ---
 
@@ -41,3 +42,4 @@
 | Version | Date | Phase | Author | Summary of Changes |
 | :--- | :--- | :--- | :--- | :--- |
 | `1.0.0` | `2026-11-19` | Phase 0 | AI Project Lead | Created master development progress tracker and recorded Phase 0 completion milestones. |
+| `1.0.1` | `2026-11-19` | Phase 0 | AI Project Lead | Logged creation of root `AGENTS.md` governance rules and Laravel Boost setup in `backend/`. |

@@ -19,6 +19,8 @@ All notable changes to this project will be documented in this file following [K
   - Fresh monorepo initialization (`backend/` Laravel 13.43, `frontend/` Next.js App Router + TypeScript + Tailwind CSS, root `.gitignore`, fresh `git init -b main`).
   - Complete Phase 0 architectural documentation suite in `docs/` (`PROJECT_OVERVIEW`, `ARCHITECTURE`, `DATABASE_DESIGN`, `ERD`, `BUSINESS_RULES`, `API_DOCUMENTATION`, `SECURITY`, `DEVELOPMENT_GUIDE`, `TESTING_STRATEGY`, `IMPLEMENTATION_ROADMAP`, `FEATURE_CHECKLIST`, `PROGRESS_TRACKER`, `KNOWN_ISSUES_AND_FUTURE`, and `adr/0001`–`0003`).
   - Added mandatory **Document Track Record** to every documentation file.
+  - Added root `AGENTS.md` enforcing strict compliance with `docs/` (SSOT), Document Track Record updates, modular monolith boundaries, and verification DoD.
+  - Installed and configured **Laravel Boost** (`v2.10.4`) in `backend/` with guidelines, skills, and MCP configuration.
 
 ---
 
@@ -27,3 +29,4 @@ All notable changes to this project will be documented in this file following [K
 | Version | Date | Phase | Author | Summary of Changes |
 | :--- | :--- | :--- | :--- | :--- |
 | `0.1.0` | `2026-11-19` | Phase 0 | AI Agent | Initialized changelog with Phase 0 fresh install and documentation baseline. |
+| `0.1.1` | `2026-11-19` | Phase 0 | AI Agent | Added root `AGENTS.md` documentation-compliance rules and Laravel Boost backend setup. |
