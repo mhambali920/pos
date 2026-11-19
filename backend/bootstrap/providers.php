@@ -11,6 +11,7 @@ use App\Modules\IAM\IAMServiceProvider;
 use App\Modules\Inventory\InventoryServiceProvider;
 use App\Modules\Organization\OrganizationServiceProvider;
 use App\Modules\Product\ProductServiceProvider;
+use App\Modules\Purchasing\PurchasingServiceProvider;
 use App\Modules\Settings\SettingsServiceProvider;
 use App\Modules\StockAdjustment\StockAdjustmentServiceProvider;
 use App\Modules\StockTransfer\StockTransferServiceProvider;
@@ -40,4 +41,5 @@ return [
     InventoryServiceProvider::class,
     StockAdjustmentServiceProvider::class,
     StockTransferServiceProvider::class,
+    PurchasingServiceProvider::class,
 ];

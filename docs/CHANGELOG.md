@@ -35,6 +35,10 @@ All notable changes to this project will be documented in this file following [K
   - Implemented `Inventory` (`stock_batches`, `inventory_stocks`, append-only `stock_movements`, `stock_opnames`), `InventoryLedgerService` (`SELECT ... FOR UPDATE`, anti-negative stock guard, MAC valuation, reservation/release, decimal-safe reconciliation), `StockAdjustment` (draft + approve workflow), and `StockTransfer` (draft → in_transit → received / cancelled with reversal).
   - Verified **CS-01** (last-stock guard) and **CS-07** (mid-transfer failure atomic rollback) via automated feature tests.
   - Built frontend `/inventory` page with Stock Overview, Movements Ledger, Adjustments, Transfers, Expired Alerts, and Ledger Reconciliation.
+- **2026-11-19 (Phase 4 — Purchasing Management)**:
+  - Implemented `Purchasing` module (`purchase_orders`, `goods_receipts`, `purchase_invoices`, `purchase_payments`, `purchase_returns`) with `bcmath` decimal totals, PO approval workflow, partial/full/damaged GRN posting good qty into `InventoryLedgerService` (with MAC update), supplier balance tracking, overpayment guard, and supplier credit notes on return.
+  - Added end-to-end `PurchasingLifecycleTest` verifying PO → GRN → Invoice → Payment → Return → Inventory Reconciliation (0 discrepancies).
+  - Built frontend `/purchasing` page with tabs for Purchase Orders, Goods Receipts, Invoices, and Returns.
 
 ---
 
@@ -48,3 +52,4 @@ All notable changes to this project will be documented in this file following [K
 | `0.2.1` | `2026-11-19` | Phase 1 | AI Agent | Logged `laravel-best-practices` hardening refinements (preventLazyLoading, Policies, Context, named login limiter, apiResource). |
 | `0.3.0` | `2026-11-19` | Phase 2 | AI Agent | Recorded Phase 2 — Master Data completion (8 backend modules + 4 frontend pages + tests). |
 | `0.4.0` | `2026-11-19` | Phase 3 | AI Agent | Recorded Phase 3 — Inventory Management completion (ledger, locking, MAC, adjustments, transfers, opname, CS-01/CS-07, frontend UI). |
+| `0.5.0` | `2026-11-19` | Phase 4 | AI Agent | Recorded Phase 4 — Purchasing Management completion (PO, GRN, Invoices, Payments, Returns, tests, frontend UI). |

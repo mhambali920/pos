@@ -45,11 +45,11 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 - [x] Batch/Lot, Expired Date, Serial Number tracking, Min/Max/Reorder alerts
 
 ## Phase 4 — Purchasing Management
-- [ ] Purchase Order (multi-item, discount, tax, approval workflow)
-- [ ] Goods Receipt (partial/full receiving, damaged items -> stock in + MAC update)
-- [ ] Purchase Invoice (due date, payment status)
-- [ ] Purchase Payment (partial/full, cash/transfer, outstanding balance)
-- [ ] Purchase Return (reason, stock out, credit note)
+- [x] Purchase Order (multi-item, discount, tax, approval workflow)
+- [x] Goods Receipt (partial/full receiving, damaged items -> stock in + MAC update)
+- [x] Purchase Invoice (due date, payment status)
+- [x] Purchase Payment (partial/full, cash/transfer, outstanding balance)
+- [x] Purchase Return (reason, stock out, credit note)
 
 ## Phase 5 — Point of Sales (Core)
 - [ ] Fast POS UI (keyboard shortcuts, barcode scanner, category nav, product grid, cart)
@@ -85,3 +85,4 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 | `1.1.0` | `2026-11-19` | Phase 1 | AI Architect | Marked all Phase 1 — Foundation deliverables complete after passing backend & frontend verification. |
 | `1.2.0` | `2026-11-19` | Phase 2 | AI Architect | Marked all Phase 2 — Master Data deliverables complete (8 backend modules + frontend catalog/partner pages + tests). |
 | `1.3.0` | `2026-11-19` | Phase 3 | AI Architect | Marked all Phase 3 — Inventory Management deliverables complete (Inventory ledger, locking, MAC, opname, adjustment, transfer, CS-01 & CS-07 tests, frontend `/inventory`). |
+| `1.4.0` | `2026-11-19` | Phase 4 | AI Architect | Marked all Phase 4 — Purchasing Management deliverables complete (PO, GRN, Invoices, Payments, Returns + Credit Note + Frontend `/purchasing`). |

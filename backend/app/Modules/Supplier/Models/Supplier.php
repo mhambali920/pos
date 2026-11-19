@@ -19,7 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $address
  * @property string|null $tax_id
  * @property int $payment_terms_days
- * @property string $balance
+ * @property numeric-string $balance
  * @property bool $is_active
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

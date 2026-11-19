@@ -213,3 +213,43 @@ export interface ExpiredBatchAlert {
   sku: string | null;
   variant_name: string | null;
 }
+
+export interface PurchaseOrderSummary {
+  id: number;
+  po_number: string;
+  order_date: string;
+  grand_total: string;
+  status: string;
+  supplier?: { id: number; company_name: string } | null;
+  warehouse?: { id: number; name: string } | null;
+}
+
+export interface GoodsReceiptSummary {
+  id: number;
+  grn_number: string;
+  status: string;
+  received_at: string;
+  purchase_order?: { id: number; po_number: string } | null;
+  warehouse?: { id: number; name: string } | null;
+}
+
+export interface PurchaseInvoiceSummary {
+  id: number;
+  invoice_number: string;
+  supplier_invoice_number: string | null;
+  due_date: string;
+  grand_total: string;
+  paid_amount: string;
+  payment_status: string;
+  supplier?: { id: number; company_name: string } | null;
+}
+
+export interface PurchaseReturnSummary {
+  id: number;
+  return_number: string;
+  credit_note_no: string | null;
+  reason: string;
+  total_amount: string;
+  status: string;
+  supplier?: { id: number; company_name: string } | null;
+}
