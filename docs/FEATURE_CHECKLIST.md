@@ -37,12 +37,12 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 - [x] Customer Management (walk-in, registered, member, wholesale, credit limit, loyalty)
 
 ## Phase 3 — Inventory Management
-- [ ] Stock overview per outlet/warehouse/product
-- [ ] Immutable `stock_movements` ledger + `SELECT ... FOR UPDATE` locking
-- [ ] Stock Adjustment (with approval & reason)
-- [ ] Stock Transfer (in-transit + receiving)
-- [ ] Stock Opname & Stock Reconciliation
-- [ ] Batch/Lot, Expired Date, Serial Number tracking, Min/Max/Reorder alerts
+- [x] Stock overview per outlet/warehouse/product
+- [x] Immutable `stock_movements` ledger + `SELECT ... FOR UPDATE` locking
+- [x] Stock Adjustment (with approval & reason)
+- [x] Stock Transfer (in-transit + receiving)
+- [x] Stock Opname & Stock Reconciliation
+- [x] Batch/Lot, Expired Date, Serial Number tracking, Min/Max/Reorder alerts
 
 ## Phase 4 — Purchasing Management
 - [ ] Purchase Order (multi-item, discount, tax, approval workflow)
@@ -84,3 +84,4 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 | `1.0.0` | `2026-11-19` | Phase 0 | AI Architect | Initial master feature checklist across all 8 phases; Phase 0 marked complete. |
 | `1.1.0` | `2026-11-19` | Phase 1 | AI Architect | Marked all Phase 1 — Foundation deliverables complete after passing backend & frontend verification. |
 | `1.2.0` | `2026-11-19` | Phase 2 | AI Architect | Marked all Phase 2 — Master Data deliverables complete (8 backend modules + frontend catalog/partner pages + tests). |
+| `1.3.0` | `2026-11-19` | Phase 3 | AI Architect | Marked all Phase 3 — Inventory Management deliverables complete (Inventory ledger, locking, MAC, opname, adjustment, transfer, CS-01 & CS-07 tests, frontend `/inventory`). |

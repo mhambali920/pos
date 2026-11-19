@@ -151,3 +151,65 @@ export interface ProductItem {
   tax?: { id: number; code: string; name: string; rate: string; type: string } | null;
   variants: ProductVariantItem[];
 }
+
+export interface InventoryStockItem {
+  id: number;
+  warehouse_id: number;
+  product_variant_id: number;
+  qty_on_hand: string;
+  qty_reserved: string;
+  qty_available: string;
+  unit_cost?: string;
+  valuation?: string;
+  warehouse?: { id: number; code: string; name: string } | null;
+  variant?: {
+    id: number;
+    sku: string;
+    name: string;
+    min_stock: string;
+    reorder_point: string;
+  } | null;
+  batch?: { id: number; batch_number: string; expired_at: string | null } | null;
+}
+
+export interface StockMovementItem {
+  id: number;
+  movement_type: string;
+  qty_before: string;
+  qty_change: string;
+  qty_after: string;
+  unit_cost: string;
+  notes: string | null;
+  warehouse?: { id: number; code: string; name: string } | null;
+  variant?: { id: number; sku: string; name: string } | null;
+  created_at: string;
+}
+
+export interface StockAdjustmentItem {
+  id: number;
+  adjustment_number: string;
+  reason: string;
+  status: string;
+  warehouse?: { id: number; code: string; name: string } | null;
+  items?: Array<{ id: number; sku: string | null; direction: string; quantity: string }>;
+  created_at: string;
+}
+
+export interface StockTransferItem {
+  id: number;
+  transfer_number: string;
+  status: string;
+  from_warehouse?: { id: number; code: string; name: string } | null;
+  to_warehouse?: { id: number; code: string; name: string } | null;
+  items?: Array<{ id: number; sku: string | null; quantity: string }>;
+  created_at: string;
+}
+
+export interface ExpiredBatchAlert {
+  id: number;
+  batch_number: string;
+  expired_at: string | null;
+  is_expired: boolean;
+  sku: string | null;
+  variant_name: string | null;
+}

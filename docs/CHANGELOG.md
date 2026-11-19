@@ -31,6 +31,10 @@ All notable changes to this project will be documented in this file following [K
   - Implemented 8 backend domain modules in `backend/app/Modules/`: `Category` (hierarchical), `Brand`, `Unit` (+ `unit_conversions`), `Tax` (+ `TaxCalculator` inclusive/exclusive `bcmath`), `Warehouse` (store & central), `Supplier`, `Customer` (+ `customer_groups`, loyalty, credit limit), and `Product` (standard, variant, bundle, service, non-stock, multi-barcode + EAN-13 generator, store-specific period pricing via `PriceResolverService`, automatic `product_price_histories` & audit logs, and `products.view_cost` protection).
   - Updated `DatabaseSeeder` with default units (`PCS`, `BOX`, `PACK`, `KG`, `GR`, `L`, `M`), `PPN11`, default warehouse `WH-001`, and `CUST-WALKIN`.
   - Built frontend Master Data pages: `/categories` (Categories, Brands, Units, Taxes, Warehouses), `/products`, `/suppliers`, and `/customers`.
+- **2026-11-19 (Phase 3 — Inventory Management)**:
+  - Implemented `Inventory` (`stock_batches`, `inventory_stocks`, append-only `stock_movements`, `stock_opnames`), `InventoryLedgerService` (`SELECT ... FOR UPDATE`, anti-negative stock guard, MAC valuation, reservation/release, decimal-safe reconciliation), `StockAdjustment` (draft + approve workflow), and `StockTransfer` (draft → in_transit → received / cancelled with reversal).
+  - Verified **CS-01** (last-stock guard) and **CS-07** (mid-transfer failure atomic rollback) via automated feature tests.
+  - Built frontend `/inventory` page with Stock Overview, Movements Ledger, Adjustments, Transfers, Expired Alerts, and Ledger Reconciliation.
 
 ---
 
@@ -43,3 +47,4 @@ All notable changes to this project will be documented in this file following [K
 | `0.2.0` | `2026-11-19` | Phase 1 | AI Agent | Recorded Phase 1 — Foundation completion (backend modules + frontend shell). |
 | `0.2.1` | `2026-11-19` | Phase 1 | AI Agent | Logged `laravel-best-practices` hardening refinements (preventLazyLoading, Policies, Context, named login limiter, apiResource). |
 | `0.3.0` | `2026-11-19` | Phase 2 | AI Agent | Recorded Phase 2 — Master Data completion (8 backend modules + 4 frontend pages + tests). |
+| `0.4.0` | `2026-11-19` | Phase 3 | AI Agent | Recorded Phase 3 — Inventory Management completion (ledger, locking, MAC, adjustments, transfers, opname, CS-01/CS-07, frontend UI). |
