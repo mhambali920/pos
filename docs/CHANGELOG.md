@@ -27,6 +27,10 @@ All notable changes to this project will be documented in this file following [K
   - Added automated unit & feature tests including **CS-06** multi-store isolation verification.
   - Installed frontend stack (`@tanstack/react-query`, `zustand`, `react-hook-form`, `zod`, `@tanstack/react-table`, `recharts`, `lucide-react`, `sonner`, `next-themes`) and built Login, responsive Backoffice Shell (15-item Sidebar, Store Switcher, Dark/Light mode), Dashboard, Users, Roles & Permissions, and Settings pages.
   - Hardened backend against `laravel-best-practices` skill: enabled `Model::preventLazyLoading(! isProduction())`, eager-loaded `roles.permissions` + `permissions` + `stores`, added named `login` rate limiter (`email|ip`), added `Context::add()` propagation (`request_id`, `store_id`, `organization_id`), added deterministic `orderByDesc('id')` tie-breaker on `AuditLogController`, extracted `OrganizationPolicy`/`StorePolicy`/`UserPolicy` with `Gate::authorize()`, and standardized CRUD routes with `Route::apiResource()`.
+- **2026-11-19 (Phase 2 — Master Data)**:
+  - Implemented 8 backend domain modules in `backend/app/Modules/`: `Category` (hierarchical), `Brand`, `Unit` (+ `unit_conversions`), `Tax` (+ `TaxCalculator` inclusive/exclusive `bcmath`), `Warehouse` (store & central), `Supplier`, `Customer` (+ `customer_groups`, loyalty, credit limit), and `Product` (standard, variant, bundle, service, non-stock, multi-barcode + EAN-13 generator, store-specific period pricing via `PriceResolverService`, automatic `product_price_histories` & audit logs, and `products.view_cost` protection).
+  - Updated `DatabaseSeeder` with default units (`PCS`, `BOX`, `PACK`, `KG`, `GR`, `L`, `M`), `PPN11`, default warehouse `WH-001`, and `CUST-WALKIN`.
+  - Built frontend Master Data pages: `/categories` (Categories, Brands, Units, Taxes, Warehouses), `/products`, `/suppliers`, and `/customers`.
 
 ---
 
@@ -38,3 +42,4 @@ All notable changes to this project will be documented in this file following [K
 | `0.1.1` | `2026-11-19` | Phase 0 | AI Agent | Added root `AGENTS.md` documentation-compliance rules and Laravel Boost backend setup. |
 | `0.2.0` | `2026-11-19` | Phase 1 | AI Agent | Recorded Phase 1 — Foundation completion (backend modules + frontend shell). |
 | `0.2.1` | `2026-11-19` | Phase 1 | AI Agent | Logged `laravel-best-practices` hardening refinements (preventLazyLoading, Policies, Context, named login limiter, apiResource). |
+| `0.3.0` | `2026-11-19` | Phase 2 | AI Agent | Recorded Phase 2 — Master Data completion (8 backend modules + 4 frontend pages + tests). |

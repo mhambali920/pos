@@ -27,14 +27,14 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 - [x] Frontend base UI (Auth, Sidebar Navigation, Dark/Light Mode, Store Switcher)
 
 ## Phase 2 — Master Data
-- [ ] Categories (hierarchical), Brands, Units of Measurement (+ conversions)
-- [ ] Tax Management (inclusive/exclusive, product & store specific)
-- [ ] Warehouse Management (per store & central)
-- [ ] Product Management (standard, variant, bundle, service, non-stock)
-- [ ] Barcode Management (generate, scan, multiple barcodes, label print)
-- [ ] Product Pricing (purchase, selling, wholesale, min price, store-specific, price history)
-- [ ] Supplier Management (CRUD, payment terms, balance, history)
-- [ ] Customer Management (walk-in, registered, member, wholesale, credit limit, loyalty)
+- [x] Categories (hierarchical), Brands, Units of Measurement (+ conversions)
+- [x] Tax Management (inclusive/exclusive, product & store specific)
+- [x] Warehouse Management (per store & central)
+- [x] Product Management (standard, variant, bundle, service, non-stock)
+- [x] Barcode Management (generate, scan, multiple barcodes, label print)
+- [x] Product Pricing (purchase, selling, wholesale, min price, store-specific, price history)
+- [x] Supplier Management (CRUD, payment terms, balance, history)
+- [x] Customer Management (walk-in, registered, member, wholesale, credit limit, loyalty)
 
 ## Phase 3 — Inventory Management
 - [ ] Stock overview per outlet/warehouse/product
@@ -83,3 +83,4 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 | :--- | :--- | :--- | :--- | :--- |
 | `1.0.0` | `2026-11-19` | Phase 0 | AI Architect | Initial master feature checklist across all 8 phases; Phase 0 marked complete. |
 | `1.1.0` | `2026-11-19` | Phase 1 | AI Architect | Marked all Phase 1 — Foundation deliverables complete after passing backend & frontend verification. |
+| `1.2.0` | `2026-11-19` | Phase 2 | AI Architect | Marked all Phase 2 — Master Data deliverables complete (8 backend modules + frontend catalog/partner pages + tests). |

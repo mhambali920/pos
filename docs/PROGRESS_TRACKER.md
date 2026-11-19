@@ -16,7 +16,7 @@
 | :--- | :--- | :--- | :---: | :---: | :---: | :--- |
 | **Phase 0** | Architecture, Fresh Install & Documentation | `Completed` | `100%` | `2026-11-19` | `2026-11-19` | Monorepo `backend/` + `frontend/` + full `docs/` suite with track records. |
 | **Phase 1** | Foundation | `Completed` | `100%` | `2026-11-19` | `2026-11-19` | Core, IAM (10 roles), Org, Store (CS-06), AuditLog, Settings, Scramble OpenAPI + Next.js Shell/Auth/Users/Roles/Settings. |
-| **Phase 2** | Master Data | `Not Started` | `0%` | — | — | Depends on Phase 1. |
+| **Phase 2** | Master Data | `Completed` | `100%` | `2026-11-19` | `2026-11-19` | Category, Brand, Unit (+conversions), Tax (+TaxCalculator), Warehouse, Supplier, Customer, Product (+variants/barcodes/bundles/store-prices/price-history) + Frontend UI. |
 | **Phase 3** | Inventory Management | `Not Started` | `0%` | — | — | Depends on Phase 2. |
 | **Phase 4** | Purchasing Management | `Not Started` | `0%` | — | — | Depends on Phase 3. |
 | **Phase 5** | Point of Sales (Core) | `Not Started` | `0%` | — | — | Depends on Phase 3. |
@@ -36,6 +36,8 @@
 | `2026-11-19` | Phase 0 | Created root `AGENTS.md` compliance rule and installed Laravel Boost (`v2.10.4`) in `backend/` | `php artisan boost:install` & `php artisan test` passed | `Done` |
 | `2026-11-19` | Phase 1 | Implemented backend Core, AuditLog, Organization, Store, IAM (10 roles + Sanctum), Settings modules & CS-06 isolation tests | Pint passed, PHPStan L7 0 errors, PHPUnit 11/11 passed (53 assertions) | `Done` |
 | `2026-11-19` | Phase 1 | Implemented frontend base UI (Login, Dashboard Shell, 15-item Sidebar, Store Switcher, Dark/Light mode, Users/Roles/Settings) | `eslint`, `tsc --noEmit`, `next build` passed | `Done` |
+| `2026-11-19` | Phase 2 | Implemented 8 backend Master Data modules (`Category`, `Brand`, `Unit`, `Tax`, `Warehouse`, `Supplier`, `Customer`, `Product`) with Policies, Actions, Services & tests | Pint passed, PHPStan L7 0 errors, PHPUnit 18/18 passed (99 assertions) | `Done` |
+| `2026-11-19` | Phase 2 | Implemented frontend Master Data pages (`/categories`, `/products`, `/suppliers`, `/customers`) | `eslint`, `tsc --noEmit`, `next build` passed | `Done` |
 
 ---
 
@@ -46,3 +48,4 @@
 | `1.0.0` | `2026-11-19` | Phase 0 | AI Project Lead | Created master development progress tracker and recorded Phase 0 completion milestones. |
 | `1.0.1` | `2026-11-19` | Phase 0 | AI Project Lead | Logged creation of root `AGENTS.md` governance rules and Laravel Boost setup in `backend/`. |
 | `1.1.0` | `2026-11-19` | Phase 1 | AI Project Lead | Completed Phase 1 — Foundation (backend & frontend) with full verification logs. |
+| `1.2.0` | `2026-11-19` | Phase 2 | AI Project Lead | Completed Phase 2 — Master Data (8 backend modules, 18 tests, and 4 frontend master data pages). |
