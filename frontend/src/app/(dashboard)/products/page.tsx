@@ -98,15 +98,16 @@ export default function ProductsPage() {
                       <tr key={product.id}>
                         <td className="py-3 pr-4">
                           <div className="flex items-center gap-3">
-                            {product.image_path ? (
-                              <img
-                                src={product.image_path}
-                                alt={product.name}
-                                className="h-10 w-12 rounded-md border border-border object-cover shrink-0"
-                              />
-                            ) : (
-                              <div className="h-10 w-12 rounded-md border border-border bg-muted shrink-0" />
-                            )}
+                            <img
+                              src={product.image_path || "/images/products/placeholder.svg"}
+                              alt={product.name}
+                              onError={(e) => {
+                                if (!e.currentTarget.src.endsWith("/images/products/placeholder.svg")) {
+                                  e.currentTarget.src = "/images/products/placeholder.svg";
+                                }
+                              }}
+                              className="h-10 w-12 rounded-md border border-border object-cover shrink-0"
+                            />
                             <div>
                               <div className="font-medium">{product.name}</div>
                               <div className="text-xs text-muted-foreground">

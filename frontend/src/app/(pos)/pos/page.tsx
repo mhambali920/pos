@@ -539,17 +539,16 @@ export default function PosTerminalPage() {
                         )}
                       >
                         <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#F4F4F0] dark:bg-[#1B1E25]">
-                          {product.image_path ? (
-                            <img
-                              src={product.image_path}
-                              alt={variant.name || product.name}
-                              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
-                            />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-xs font-mono text-[#7A7F8A]">
-                              {variant.sku}
-                            </div>
-                          )}
+                          <img
+                            src={product.image_path || "/images/products/placeholder.svg"}
+                            alt={variant.name || product.name}
+                            onError={(e) => {
+                              if (!e.currentTarget.src.endsWith("/images/products/placeholder.svg")) {
+                                e.currentTarget.src = "/images/products/placeholder.svg";
+                              }
+                            }}
+                            className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-[1.03]"
+                          />
 
                           {inCartQty > 0 && (
                             <span className="absolute right-2 top-2 inline-flex h-6 min-w-6 items-center justify-center rounded-md bg-[#0F766E] px-1.5 font-mono text-xs font-bold text-white shadow-sm tabular-nums">

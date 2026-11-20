@@ -101,8 +101,6 @@ class DemoCatalogSeeder extends Seeder
         foreach ($catalog as $index => $item) {
             $variant = ProductVariant::query()->where('sku', $item['sku'])->first();
 
-            $imagePath = "/images/products/{$item['sku']}.svg";
-
             if (! $variant instanceof ProductVariant) {
                 $product = Product::query()->create([
                     'organization_id' => $org->id,
@@ -112,7 +110,7 @@ class DemoCatalogSeeder extends Seeder
                     'tax_id' => $tax?->id,
                     'product_type' => ProductType::Standard,
                     'name' => $item['name'],
-                    'image_path' => $imagePath,
+                    'image_path' => null,
                     'track_inventory' => true,
                     'is_active' => true,
                 ]);
@@ -137,8 +135,8 @@ class DemoCatalogSeeder extends Seeder
             } else {
                 Product::query()
                     ->where('id', $variant->product_id)
-                    ->whereNull('image_path')
-                    ->update(['image_path' => $imagePath]);
+                    ->where('image_path', "/images/products/{$item['sku']}.svg")
+                    ->update(['image_path' => null]);
             }
 
             $hasMovements = StockMovement::query()
