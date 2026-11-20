@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch, ApiError } from "@/lib/api";
+import { printThermalReceipt } from "@/lib/print-receipt";
 import type {
   CategoryItem,
   CustomerItem,
@@ -924,7 +925,16 @@ export default function PosTerminalPage() {
             <div className="flex items-center justify-between pt-1">
               <Badge variant="success">Paid · Change {formatCurrency(receipt.change_amount)}</Badge>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => window.print()}>
+                <Button
+                  variant="outline"
+                  onClick={() =>
+                    printThermalReceipt(
+                      receipt.thermal_text,
+                      receiptPaper,
+                      receipt.transaction_number
+                    )
+                  }
+                >
                   <Printer className="h-4 w-4" /> Print
                 </Button>
                 <Button

@@ -22,7 +22,9 @@ use App\Modules\Product\Models\ProductVariant;
 use App\Modules\Product\Services\BarcodeService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -77,7 +79,17 @@ class ProductController extends Controller
             return ApiResponse::error('Organization context required.', 'ORGANIZATION_REQUIRED', 422);
         }
 
-        $product = $action->execute($user->organization_id, $request->validated());
+        /** @var array<string, mixed> $data */
+        $data = $request->validated();
+        $file = $request->file('image');
+        if ($file instanceof UploadedFile) {
+            $stored = $file->store("products/{$user->organization_id}", 'public');
+            if (is_string($stored)) {
+                $data['image_path'] = Storage::disk('public')->url($stored);
+            }
+        }
+
+        $product = $action->execute($user->organization_id, $data);
 
         return ApiResponse::success(new ProductResource($product), 'Product created successfully.', 201);
     }
@@ -106,7 +118,17 @@ class ProductController extends Controller
         /** @var User $user */
         $user = $request->user();
 
-        $updated = $action->execute($product, $request->validated(), $user->id);
+        /** @var array<string, mixed> $data */
+        $data = $request->validated();
+        $file = $request->file('image');
+        if ($file instanceof UploadedFile) {
+            $stored = $file->store("products/{$product->organization_id}", 'public');
+            if (is_string($stored)) {
+                $data['image_path'] = Storage::disk('public')->url($stored);
+            }
+        }
+
+        $updated = $action->execute($product, $data, $user->id);
 
         return ApiResponse::success(new ProductResource($updated), 'Product updated successfully.');
     }

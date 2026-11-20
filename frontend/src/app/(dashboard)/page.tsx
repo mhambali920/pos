@@ -11,23 +11,28 @@ import {
   Receipt,
   TrendingUp,
 } from "lucide-react";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import { apiFetch } from "@/lib/api";
 import type { DashboardPayload } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+  type ChartConfig,
+} from "@/components/ui/chart";
+import { DatePicker } from "@/components/ui/date-picker";
 import { useAuthStore } from "@/stores/auth-store";
+
+const revenueChartConfig = {
+  revenue: {
+    label: "Revenue",
+    color: "var(--chart-1)",
+  },
+} satisfies ChartConfig;
 
 export default function DashboardHomePage() {
   const { user, activeStoreId } = useAuthStore();
@@ -78,19 +83,19 @@ export default function DashboardHomePage() {
               {r === "owner" ? "Owner" : r === "manager" ? "Store Manager" : "Cashier"}
             </Button>
           ))}
-          <Input
-            type="date"
-            aria-label="Date from"
+          <DatePicker
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="h-9 w-36 text-xs"
+            onChange={setDateFrom}
+            placeholder="From date"
+            allowClear
+            className="h-9 w-40 text-xs"
           />
-          <Input
-            type="date"
-            aria-label="Date to"
+          <DatePicker
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="h-9 w-36 text-xs"
+            onChange={setDateTo}
+            placeholder="To date"
+            allowClear
+            className="h-9 w-40 text-xs"
           />
           {!user && (
             <Link href="/login">
@@ -247,21 +252,21 @@ export default function DashboardHomePage() {
                 {data?.period ? `${data.period.from} to ${data.period.to}` : "Last 30 days"}
               </CardDescription>
             </CardHeader>
-            <CardContent className="h-64">
+            <CardContent>
               {chartData.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
                   No sales data for the selected period.
                 </div>
               ) : (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                    <YAxis tick={{ fontSize: 11 }} />
-                    <Tooltip />
-                    <Bar dataKey="revenue" fill="#0F766E" radius={[4, 4, 0, 0]} />
+                <ChartContainer config={revenueChartConfig} className="h-64 w-full">
+                  <BarChart accessibilityLayer data={chartData}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis dataKey="date" tickLine={false} tickMargin={8} axisLine={false} />
+                    <YAxis tickLine={false} axisLine={false} />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
                   </BarChart>
-                </ResponsiveContainer>
+                </ChartContainer>
               )}
             </CardContent>
           </Card>

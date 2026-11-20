@@ -1,22 +1,30 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, LogOut, Menu, Moon, Store as StoreIcon, Sun } from "lucide-react";
+import { Bell, LogOut, Moon, Store as StoreIcon, Sun } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/stores/auth-store";
 import { apiFetch } from "@/lib/api";
 import type { NotificationPayload } from "@/lib/types";
 
-export function Topbar({ onToggleMobileMenu }: { onToggleMobileMenu: () => void }) {
+export function Topbar() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const { resolvedTheme, setTheme } = useTheme();
   const { user, activeStoreId, setActiveStoreId, clearSession } = useAuthStore();
-  const [notifOpen, setNotifOpen] = useState(false);
 
   const notificationsQuery = useQuery({
     queryKey: ["notifications"],
@@ -47,45 +55,47 @@ export function Topbar({ onToggleMobileMenu }: { onToggleMobileMenu: () => void 
   const notifItems = notificationsQuery.data?.data?.items ?? [];
 
   return (
-    <header className="flex h-16 items-center justify-between border-b border-border bg-card px-4 lg:px-6">
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="lg:hidden"
-          onClick={onToggleMobileMenu}
-          aria-label="Toggle navigation"
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
+    <header className="flex h-14 shrink-0 items-center justify-between gap-2 border-b border-border bg-card px-4">
+      <div className="flex items-center gap-2">
+        <SidebarTrigger className="-ml-1" />
+        <Separator orientation="vertical" className="mr-1 h-4" />
 
         {user?.stores && user.stores.length > 0 && (
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/50 px-2.5 py-1.5">
-            <StoreIcon className="h-4 w-4 text-muted-foreground" />
-            <select
-              aria-label="Active store"
-              value={activeStoreId ?? ""}
-              onChange={(e) => setActiveStoreId(Number(e.target.value))}
-              className="bg-transparent text-xs font-medium text-foreground focus:outline-none"
+          <div className="flex items-center gap-2">
+            <StoreIcon className="h-4 w-4 text-muted-foreground hidden sm:block" />
+            <Select
+              value={activeStoreId !== null ? String(activeStoreId) : ""}
+              onValueChange={(val) => {
+                if (val) setActiveStoreId(Number(val));
+              }}
             >
-              {user.stores.map((store) => (
-                <option key={store.id} value={store.id} className="bg-card text-foreground">
-                  {store.code} — {store.name}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger className="h-8 w-[200px] text-xs">
+                <SelectValue placeholder="Select store" />
+              </SelectTrigger>
+              <SelectContent>
+                {user.stores.map((store) => (
+                  <SelectItem key={store.id} value={String(store.id)}>
+                    {store.code} — {store.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         )}
       </div>
 
       <div className="flex items-center gap-2">
         {user && (
-          <div className="relative">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setNotifOpen((v) => !v)}
-              aria-label="Notifications"
+          <Popover>
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  aria-label="Notifications"
+                />
+              }
             >
               <Bell className="h-4 w-4" />
               {unreadCount > 0 && (
@@ -93,39 +103,38 @@ export function Topbar({ onToggleMobileMenu }: { onToggleMobileMenu: () => void 
                   {unreadCount}
                 </span>
               )}
-            </Button>
-
-            {notifOpen && (
-              <div className="absolute right-0 mt-2 w-80 rounded-xl border border-border bg-card p-3 shadow-lg z-40">
-                <div className="flex items-center justify-between pb-2 border-b border-border">
-                  <span className="text-xs font-semibold">Notifications</span>
-                  {unreadCount > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => markAllReadMutation.mutate()}
-                      className="text-[11px] text-primary hover:underline cursor-pointer"
-                    >
-                      Mark all read
-                    </button>
-                  )}
-                </div>
-                <div className="max-h-64 overflow-auto divide-y divide-border mt-1">
-                  {notifItems.length === 0 ? (
-                    <p className="py-4 text-center text-xs text-muted-foreground">
-                      No notifications yet.
-                    </p>
-                  ) : (
-                    notifItems.map((n) => (
-                      <div key={n.id} className="py-2 text-xs">
-                        <div className="font-medium">{n.title}</div>
-                        <div className="text-muted-foreground mt-0.5">{n.body}</div>
-                      </div>
-                    ))
-                  )}
-                </div>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-3">
+              <div className="flex items-center justify-between pb-2 border-b border-border">
+                <span className="text-xs font-semibold">Notifications</span>
+                {unreadCount > 0 && (
+                  <Button
+                    type="button"
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-[11px]"
+                    onClick={() => markAllReadMutation.mutate()}
+                  >
+                    Mark all read
+                  </Button>
+                )}
               </div>
-            )}
-          </div>
+              <div className="max-h-64 overflow-auto divide-y divide-border mt-1">
+                {notifItems.length === 0 ? (
+                  <p className="py-4 text-center text-xs text-muted-foreground">
+                    No notifications yet.
+                  </p>
+                ) : (
+                  notifItems.map((n) => (
+                    <div key={n.id} className="py-2 text-xs">
+                      <div className="font-medium">{n.title}</div>
+                      <div className="text-muted-foreground mt-0.5">{n.body}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </PopoverContent>
+          </Popover>
         )}
 
         <Button
@@ -139,7 +148,7 @@ export function Topbar({ onToggleMobileMenu }: { onToggleMobileMenu: () => void 
         </Button>
 
         {user && (
-          <div className="hidden sm:flex flex-col items-end pr-2">
+          <div className="hidden sm:flex flex-col items-end pr-1">
             <span className="text-xs font-semibold leading-tight">{user.name}</span>
             <span className="text-[11px] text-muted-foreground">
               {user.roles[0] ?? "Staff"}

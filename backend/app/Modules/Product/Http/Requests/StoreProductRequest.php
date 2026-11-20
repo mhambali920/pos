@@ -34,6 +34,7 @@ class StoreProductRequest extends FormRequest
             'name' => ['required', 'string', 'max:200'],
             'description' => ['nullable', 'string'],
             'image_path' => ['nullable', 'string', 'max:500'],
+            'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
             'track_inventory' => ['sometimes', 'boolean'],
             'track_batch' => ['sometimes', 'boolean'],
             'track_serial' => ['sometimes', 'boolean'],

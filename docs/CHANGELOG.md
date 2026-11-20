@@ -3,7 +3,7 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-011` |
-| **Version** | `1.0.0` |
+| **Version** | `1.0.1` |
 | **Status** | `Release Ready` |
 | **Last Updated** | `2026-11-20` |
 | **Author** | Engineering Team (AI Agent) |
@@ -62,6 +62,11 @@ All notable changes to this project will be documented in this file following [K
   - Added named `api` (`120/min`) and `exports` (`10/min`) rate limiters in `AppServiceProvider` and throttled `POST /api/v1/reports/{type}/export`.
   - Updated Scramble OpenAPI 3.1 metadata (`v1.0.0`) and added `ProductionReadinessTest` verifying `/up`, security headers, authentication boundary, and `/docs/api.json` path completeness across all core modules.
   - Authored `docs/DEPLOYMENT_AND_RUNBOOK.md` covering zero-downtime deployment, Redis/queue/scheduler ops, MariaDB/MySQL automated backups, restore verification, and monitoring alerts.
+- **2026-11-20 (Frontend shadcn/ui Migration & Full CRUD Completion)**:
+  - Initialized official `shadcn/ui` CLI (`components.json`) and installed full component suite (`sidebar`, `dialog`, `alert-dialog`, `select`, `popover`, `calendar`, `date-picker`, `tabs`, `table`, `label`, `checkbox`, `switch`, `textarea`, `sheet`, `separator`, `tooltip`, `skeleton`, `dropdown-menu`, `scroll-area`).
+  - Migrated `DashboardShell`, `SidebarNav`, and `Topbar` to official collapsible `shadcn/ui` `Sidebar` + `SidebarProvider` + `SidebarInset` + `Popover` notifications + `Select` store switcher.
+  - Completed full Create/Edit/Delete & action workflows on `/products`, `/customers` (+ loyalty adjust), `/suppliers`, `/users` (+ activate/deactivate & reset password), `/roles` (+ permission sync), `/settings` (+ store CRUD & preferences), `/inventory` (+ adjustment & transfer drafts), and `/purchasing` (+ PO creation with `DatePicker`).
+  - Replaced all native `<input type="date">` and `<select>` across dashboard pages with shadcn `DatePicker` and `Select`.
 
 ---
 
@@ -81,3 +86,4 @@ All notable changes to this project will be documented in this file following [K
 | `0.7.1` | `2026-11-20` | Phase 6 | AI Agent | Logged `laravel-best-practices` hardening refinements (FormRequests, scoped Rule::exists/unique, safe upload storage, CashRegister view guards, deterministic ordering). |
 | `0.8.0` | `2026-11-20` | Phase 7 | AI Agent | Recorded Phase 7 — Advanced Features completion (`Promotion`, Loyalty, `Notification`, `Analytics`, `FinancialReporting`, async exports, and frontend UI). |
 | `1.0.0` | `2026-11-20` | Phase 8 | AI Agent | Recorded Phase 8 — Quality & Production Readiness completion (security headers, rate limiters, OpenAPI 3.1 test, deployment & backup runbook). |
+| `1.0.1` | `2026-11-20` | Phase 8 | AI Agent | Logged official `shadcn/ui` CLI migration (including `Sidebar` & `DatePicker`) and complete frontend CRUD forms across all backoffice pages. |

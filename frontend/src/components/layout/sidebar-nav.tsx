@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   BarChart3,
   Boxes,
+  CreditCard,
   FolderTree,
   LayoutDashboard,
   Package,
@@ -17,67 +18,116 @@ import {
   Users,
   UserSquare2,
   Wallet,
-  CreditCard,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar";
+import { useAuthStore } from "@/stores/auth-store";
 
-export const NAV_ITEMS = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Point of Sales", href: "/pos", icon: ShoppingCart },
-  { label: "Sales", href: "/sales", icon: Receipt },
-  { label: "Products", href: "/products", icon: Package },
-  { label: "Categories", href: "/categories", icon: FolderTree },
-  { label: "Inventory", href: "/inventory", icon: Boxes },
-  { label: "Purchasing", href: "/purchasing", icon: Truck },
-  { label: "Suppliers", href: "/suppliers", icon: Store },
-  { label: "Customers", href: "/customers", icon: UserSquare2 },
-  { label: "Cash Management", href: "/cash-management", icon: Wallet },
-  { label: "Expenses", href: "/expenses", icon: CreditCard },
-  { label: "Reports", href: "/reports", icon: BarChart3 },
-  { label: "Users", href: "/users", icon: Users },
-  { label: "Roles & Permissions", href: "/roles", icon: ShieldCheck },
-  { label: "Settings", href: "/settings", icon: Settings },
+export const NAV_GROUPS = [
+  {
+    label: "Operations",
+    items: [
+      { label: "Dashboard", href: "/", icon: LayoutDashboard },
+      { label: "Point of Sales", href: "/pos", icon: ShoppingCart },
+      { label: "Sales", href: "/sales", icon: Receipt },
+      { label: "Cash Management", href: "/cash-management", icon: Wallet },
+      { label: "Expenses", href: "/expenses", icon: CreditCard },
+    ],
+  },
+  {
+    label: "Catalog & Supply",
+    items: [
+      { label: "Products", href: "/products", icon: Package },
+      { label: "Categories", href: "/categories", icon: FolderTree },
+      { label: "Inventory", href: "/inventory", icon: Boxes },
+      { label: "Purchasing", href: "/purchasing", icon: Truck },
+      { label: "Suppliers", href: "/suppliers", icon: Store },
+      { label: "Customers", href: "/customers", icon: UserSquare2 },
+    ],
+  },
+  {
+    label: "Analytics & Admin",
+    items: [
+      { label: "Reports & Promos", href: "/reports", icon: BarChart3 },
+      { label: "Users", href: "/users", icon: Users },
+      { label: "Roles & Permissions", href: "/roles", icon: ShieldCheck },
+      { label: "Settings", href: "/settings", icon: Settings },
+    ],
+  },
 ] as const;
 
-export function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+export function SidebarNav() {
   const pathname = usePathname();
+  const { user } = useAuthStore();
 
   return (
-    <aside className="flex h-full w-64 flex-col border-r border-border bg-card">
-      <div className="flex h-16 items-center gap-2.5 border-b border-border px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">
-          EP
-        </div>
-        <div className="flex flex-col">
-          <span className="text-sm font-semibold tracking-tight">Enterprise POS</span>
-          <span className="text-[11px] text-muted-foreground">Retail Operations</span>
-        </div>
-      </div>
+    <Sidebar collapsible="icon">
+      <SidebarHeader className="border-b border-sidebar-border">
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" render={<Link href="/" />}>
+              <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground text-xs font-bold">
+                EP
+              </div>
+              <div className="grid flex-1 text-left text-sm leading-tight">
+                <span className="truncate font-semibold">Enterprise POS</span>
+                <span className="truncate text-xs text-muted-foreground">Retail Operations</span>
+              </div>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
 
-      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        {NAV_ITEMS.map((item) => {
-          const Icon = item.icon;
-          const isActive =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
+      <SidebarContent>
+        {NAV_GROUPS.map((group) => (
+          <SidebarGroup key={group.label}>
+            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {group.items.map((item) => {
+                  const Icon = item.icon;
+                  const isActive =
+                    item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4 shrink-0" />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-    </aside>
+                  return (
+                    <SidebarMenuItem key={item.href}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        tooltip={item.label}
+                        render={<Link href={item.href} />}
+                      >
+                        <Icon />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
+      </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border">
+        <div className="px-2 py-1.5 text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">
+          <div className="font-medium text-sidebar-foreground truncate">
+            {user?.name ?? "Guest"}
+          </div>
+          <div className="truncate">{user?.roles[0] ?? "Not signed in"}</div>
+        </div>
+      </SidebarFooter>
+      <SidebarRail />
+    </Sidebar>
   );
 }

@@ -1,31 +1,59 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
-import { apiFetch } from "@/lib/api";
+import Link from "next/link";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Pencil, Plus, Search, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import { apiFetch, ApiError } from "@/lib/api";
 import type { ProductItem } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 export default function ProductsPage() {
+  const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
-  const [typeFilter, setTypeFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("all");
 
-  const { data, isLoading, isError, error } = useQuery({
+  const productsQuery = useQuery({
     queryKey: ["products", search, typeFilter],
     queryFn: () => {
       const params = new URLSearchParams();
       if (search) params.set("search", search);
-      if (typeFilter) params.set("product_type", typeFilter);
+      if (typeFilter && typeFilter !== "all") params.set("product_type", typeFilter);
       const qs = params.toString();
       return apiFetch<ProductItem[]>(`/products${qs ? `?${qs}` : ""}`);
     },
   });
 
-  const products = data?.data ?? [];
+  const deleteMutation = useMutation({
+    mutationFn: (id: number) => apiFetch(`/products/${id}`, { method: "DELETE" }),
+    onSuccess: () => {
+      toast.success("Product archived.");
+      void queryClient.invalidateQueries({ queryKey: ["products"] });
+    },
+    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Delete failed."),
+  });
+
+  const products = productsQuery.data?.data ?? [];
 
   return (
     <div className="space-y-6">
@@ -37,9 +65,9 @@ export default function ProductsPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          <div className="relative w-64">
-            <Search className="pointer-events-none absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative w-60">
+            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search name, SKU, barcode..."
               value={search}
@@ -47,19 +75,24 @@ export default function ProductsPage() {
               className="pl-9"
             />
           </div>
-          <select
-            aria-label="Filter product type"
-            value={typeFilter}
-            onChange={(e) => setTypeFilter(e.target.value)}
-            className="h-10 rounded-lg border border-border bg-card px-3 text-sm"
-          >
-            <option value="">All Types</option>
-            <option value="standard">Standard</option>
-            <option value="variant">Variant</option>
-            <option value="bundle">Bundle</option>
-            <option value="service">Service</option>
-            <option value="non_stock">Non-Stock</option>
-          </select>
+          <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? "all")}>
+            <SelectTrigger className="w-36">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="standard">Standard</SelectItem>
+              <SelectItem value="variant">Variant</SelectItem>
+              <SelectItem value="bundle">Bundle</SelectItem>
+              <SelectItem value="service">Service</SelectItem>
+              <SelectItem value="non_stock">Non-Stock</SelectItem>
+            </SelectContent>
+          </Select>
+          <Link href="/products/new">
+            <Button>
+              <Plus className="h-4 w-4" /> Add Product
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -68,77 +101,93 @@ export default function ProductsPage() {
           <CardTitle>Product Catalog</CardTitle>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
+          {productsQuery.isLoading ? (
             <div className="space-y-3">
               <div className="h-12 animate-pulse rounded-md bg-muted" />
               <div className="h-12 animate-pulse rounded-md bg-muted" />
             </div>
-          ) : isError ? (
-            <p className="text-sm text-red-600">
-              {error instanceof Error ? error.message : "Failed to load products."}
+          ) : productsQuery.isError ? (
+            <p className="text-sm text-destructive">
+              {productsQuery.error instanceof Error
+                ? productsQuery.error.message
+                : "Failed to load products."}
             </p>
           ) : products.length === 0 ? (
             <p className="text-sm text-muted-foreground">No products found.</p>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="border-b border-border text-xs text-muted-foreground">
-                  <tr>
-                    <th className="py-2.5 pr-4 font-medium">Product</th>
-                    <th className="py-2.5 pr-4 font-medium">Type</th>
-                    <th className="py-2.5 pr-4 font-medium">Primary SKU</th>
-                    <th className="py-2.5 pr-4 font-medium">Selling Price</th>
-                    <th className="py-2.5 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
-                  {products.map((product) => {
-                    const primary = product.variants[0];
-                    return (
-                      <tr key={product.id}>
-                        <td className="py-3 pr-4">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={product.image_path || "/images/products/placeholder.svg"}
-                              alt={product.name}
-                              onError={(e) => {
-                                if (!e.currentTarget.src.endsWith("/images/products/placeholder.svg")) {
-                                  e.currentTarget.src = "/images/products/placeholder.svg";
-                                }
-                              }}
-                              className="h-10 w-12 rounded-md border border-border object-cover shrink-0"
-                            />
-                            <div>
-                              <div className="font-medium">{product.name}</div>
-                              <div className="text-xs text-muted-foreground">
-                                {product.category?.name ?? "Uncategorized"}
-                                {product.variants.length > 1
-                                  ? ` • ${product.variants.length} variants`
-                                  : ""}
-                              </div>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Primary SKU</TableHead>
+                  <TableHead>Selling Price</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((product) => {
+                  const primary = product.variants[0];
+                  return (
+                    <TableRow key={product.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <img
+                            src={product.image_path || "/images/products/placeholder.svg"}
+                            alt={product.name}
+                            onError={(e) => {
+                              if (!e.currentTarget.src.endsWith("/images/products/placeholder.svg")) {
+                                e.currentTarget.src = "/images/products/placeholder.svg";
+                              }
+                            }}
+                            className="h-10 w-12 rounded-md border border-border object-cover shrink-0"
+                          />
+                          <div>
+                            <div className="font-medium">{product.name}</div>
+                            <div className="text-xs text-muted-foreground">
+                              {product.category?.name ?? "Uncategorized"}
+                              {product.variants.length > 1
+                                ? ` • ${product.variants.length} variants`
+                                : ""}
                             </div>
                           </div>
-                        </td>
-                        <td className="py-3 pr-4">
-                          <Badge variant="muted">{product.product_type}</Badge>
-                        </td>
-                        <td className="py-3 pr-4 font-mono text-xs">
-                          {primary?.sku ?? "—"}
-                        </td>
-                        <td className="py-3 pr-4 font-medium">
-                          {primary ? formatCurrency(primary.selling_price) : "—"}
-                        </td>
-                        <td className="py-3">
-                          <Badge variant={product.is_active ? "success" : "muted"}>
-                            {product.is_active ? "Active" : "Inactive"}
-                          </Badge>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="muted">{product.product_type}</Badge>
+                      </TableCell>
+                      <TableCell className="font-mono text-xs">{primary?.sku ?? "—"}</TableCell>
+                      <TableCell className="font-medium font-mono">
+                        {primary ? formatCurrency(primary.selling_price) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={product.is_active ? "success" : "muted"}>
+                          {product.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="inline-flex items-center gap-1">
+                          <Link href={`/products/${product.id}/edit`}>
+                            <Button size="icon" variant="ghost" aria-label="Edit product">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                          </Link>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label="Delete product"
+                            onClick={() => deleteMutation.mutate(product.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>

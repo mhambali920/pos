@@ -15,6 +15,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function CashManagementPage() {
   const queryClient = useQueryClient();
@@ -294,20 +302,23 @@ export default function CashManagementPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1">
-              <label className="text-xs font-medium text-muted-foreground">Cash Register</label>
-              <select
-                aria-label="Select cash register"
+            <div className="flex-1 space-y-1.5">
+              <Label>Cash Register</Label>
+              <Select
                 value={selectedRegisterId || String(registers[0]?.id ?? "")}
-                onChange={(e) => setSelectedRegisterId(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-card px-3 text-sm"
+                onValueChange={(v) => setSelectedRegisterId(v ?? "")}
               >
-                {registers.map((reg) => (
-                  <option key={reg.id} value={reg.id}>
-                    {reg.code} — {reg.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select cash register" />
+                </SelectTrigger>
+                <SelectContent>
+                  {registers.map((reg) => (
+                    <SelectItem key={reg.id} value={String(reg.id)}>
+                      {reg.code} — {reg.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="sm:w-52">
               <label className="text-xs font-medium text-muted-foreground">Opening Balance</label>

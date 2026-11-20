@@ -11,6 +11,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type TabType = "sales" | "inventory" | "purchasing" | "financial" | "promotions" | "exports";
 
@@ -111,19 +120,19 @@ export default function ReportsPage() {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Input
-            type="date"
-            aria-label="Report start date"
+          <DatePicker
             value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="h-9 w-36 text-xs"
+            onChange={setDateFrom}
+            placeholder="Start date"
+            allowClear
+            className="h-9 w-40 text-xs"
           />
-          <Input
-            type="date"
-            aria-label="Report end date"
+          <DatePicker
             value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="h-9 w-36 text-xs"
+            onChange={setDateTo}
+            placeholder="End date"
+            allowClear
+            className="h-9 w-40 text-xs"
           />
         </div>
       </div>
@@ -248,18 +257,18 @@ export default function ReportsPage() {
                 value={promoName}
                 onChange={(e) => setPromoName(e.target.value)}
               />
-              <select
-                aria-label="Promotion type"
-                value={promoType}
-                onChange={(e) => setPromoType(e.target.value)}
-                className="h-10 rounded-lg border border-border bg-card px-2.5 text-sm"
-              >
-                <option value="percentage">Percentage (%)</option>
-                <option value="fixed_amount">Fixed Amount</option>
-                <option value="coupon">Coupon</option>
-                <option value="bogo">BOGO</option>
-                <option value="buy_x_get_y">Buy X Get Y</option>
-              </select>
+              <Select value={promoType} onValueChange={(v) => setPromoType(v ?? "percentage")}>
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Percentage (%)</SelectItem>
+                  <SelectItem value="fixed_amount">Fixed Amount</SelectItem>
+                  <SelectItem value="coupon">Coupon</SelectItem>
+                  <SelectItem value="bogo">BOGO</SelectItem>
+                  <SelectItem value="buy_x_get_y">Buy X Get Y</SelectItem>
+                </SelectContent>
+              </Select>
               <Input
                 type="number"
                 placeholder="Value"
@@ -272,11 +281,10 @@ export default function ReportsPage() {
               >
                 <Plus className="h-4 w-4" /> Create
               </Button>
-              <label className="sm:col-span-5 flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
+              <label className="sm:col-span-5 flex items-center gap-2 text-xs cursor-pointer">
+                <Checkbox
                   checked={promoStackable}
-                  onChange={(e) => setPromoStackable(e.target.checked)}
+                  onCheckedChange={(v) => setPromoStackable(Boolean(v))}
                 />
                 Allow stacking with lower-priority promotions
               </label>

@@ -15,6 +15,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function ExpensesPage() {
   const queryClient = useQueryClient();
@@ -127,17 +137,20 @@ export default function ExpensesPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <select
-            aria-label="Filter expense status"
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="h-10 rounded-lg border border-border bg-card px-3 text-sm"
+          <Select
+            value={statusFilter || "all"}
+            onValueChange={(v) => setStatusFilter(!v || v === "all" ? "" : v)}
           >
-            <option value="">All Statuses</option>
-            <option value="pending_approval">Pending Approval</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
+            <SelectTrigger className="w-44">
+              <SelectValue placeholder="All Statuses" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              <SelectItem value="pending_approval">Pending Approval</SelectItem>
+              <SelectItem value="approved">Approved</SelectItem>
+              <SelectItem value="rejected">Rejected</SelectItem>
+            </SelectContent>
+          </Select>
           <Button
             onClick={() => {
               if (!expenseDate) {
@@ -157,28 +170,30 @@ export default function ExpensesPage() {
             <CardTitle>Submit Expense</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Category</label>
-              <select
-                aria-label="Expense category"
+            <div className="space-y-1.5">
+              <Label>Category</Label>
+              <Select
                 value={categoryId || String(categories[0]?.id ?? "")}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="mt-1 h-10 w-full rounded-lg border border-border bg-card px-3 text-sm"
+                onValueChange={(v) => setCategoryId(v ?? "")}
               >
-                {categories.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.code} — {cat.name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={String(cat.id)}>
+                      {cat.code} — {cat.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Expense Date</label>
-              <Input
-                type="date"
+            <div className="space-y-1.5">
+              <Label>Expense Date</Label>
+              <DatePicker
                 value={expenseDate}
-                onChange={(e) => setExpenseDate(e.target.value)}
-                className="mt-1"
+                onChange={setExpenseDate}
+                placeholder="Select expense date"
               />
             </div>
             <div>
@@ -213,11 +228,10 @@ export default function ExpensesPage() {
               />
             </div>
             {openSession && (
-              <label className="sm:col-span-2 flex items-center gap-2 text-xs">
-                <input
-                  type="checkbox"
+              <label className="sm:col-span-2 flex items-center gap-2 text-xs cursor-pointer">
+                <Checkbox
                   checked={useCashDrawer}
-                  onChange={(e) => setUseCashDrawer(e.target.checked)}
+                  onCheckedChange={(v) => setUseCashDrawer(Boolean(v))}
                 />
                 Deduct from active cash register session (#{openSession.id}) upon approval
               </label>

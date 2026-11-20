@@ -10,6 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 type TabKey = "categories" | "brands" | "units" | "taxes" | "warehouses";
 
@@ -138,15 +146,19 @@ export default function CategoriesAndCatalogConfigPage() {
                   />
                 </div>
                 <div className="w-36 space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Type</label>
-                  <select
+                  <Label>Type</Label>
+                  <Select
                     value={taxType}
-                    onChange={(e) => setTaxType(e.target.value as "exclusive" | "inclusive")}
-                    className="h-10 w-full rounded-lg border border-border bg-card px-3 text-sm"
+                    onValueChange={(v) => setTaxType((v as "exclusive" | "inclusive") ?? "exclusive")}
                   >
-                    <option value="exclusive">Exclusive</option>
-                    <option value="inclusive">Inclusive</option>
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="exclusive">Exclusive</SelectItem>
+                      <SelectItem value="inclusive">Inclusive</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </>
             )}

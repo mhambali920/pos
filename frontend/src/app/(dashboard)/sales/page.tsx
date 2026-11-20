@@ -5,6 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Printer, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { apiFetch, ApiError } from "@/lib/api";
+import { printThermalReceipt } from "@/lib/print-receipt";
 import type {
   PaymentMethodItem,
   ReceiptPayload,
@@ -16,6 +17,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface RefundDraftLine {
   sale_item_id: number;
@@ -157,20 +173,23 @@ export default function SalesHistoryPage() {
             Returns & Refunds
           </Button>
           {activeTab === "sales" && (
-            <select
-              aria-label="Filter sale status"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="h-9 rounded-lg border border-border bg-card px-3 text-sm"
+            <Select
+              value={statusFilter || "all"}
+              onValueChange={(v) => setStatusFilter(!v || v === "all" ? "" : v)}
             >
-              <option value="">All Statuses</option>
-              <option value="paid">Paid</option>
-              <option value="held">Held</option>
-              <option value="pending_payment">Pending Payment</option>
-              <option value="partially_refunded">Partially Refunded</option>
-              <option value="refunded">Refunded</option>
-              <option value="cancelled">Cancelled</option>
-            </select>
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="All Statuses" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="paid">Paid</SelectItem>
+                <SelectItem value="held">Held</SelectItem>
+                <SelectItem value="pending_payment">Pending Payment</SelectItem>
+                <SelectItem value="partially_refunded">Partially Refunded</SelectItem>
+                <SelectItem value="refunded">Refunded</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
+              </SelectContent>
+            </Select>
           )}
         </div>
       </div>
@@ -275,123 +294,139 @@ export default function SalesHistoryPage() {
         </Card>
       )}
 
-      {refundSale && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-lg rounded-xl border border-border bg-card p-5 space-y-4">
-            <h3 className="font-semibold">
-              Process Return & Refund — {refundSale.transaction_number}
-            </h3>
+      <Dialog open={Boolean(refundSale)} onOpenChange={(o) => !o && setRefundSale(null)}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>
+              Process Return &amp; Refund — {refundSale?.transaction_number}
+            </DialogTitle>
+          </DialogHeader>
 
-            <div className="space-y-2 max-h-60 overflow-auto">
-              {refundLines.map((line, idx) => (
-                <div
-                  key={line.sale_item_id}
-                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-2.5 text-xs"
-                >
-                  <div>
-                    <div className="font-medium">{line.name}</div>
-                    <div className="text-muted-foreground font-mono">
-                      {line.sku} • Max refundable: {line.remaining}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="number"
-                      min="0"
-                      max={line.remaining}
-                      value={line.quantity}
-                      onChange={(e) =>
-                        setRefundLines((prev) =>
-                          prev.map((item, i) =>
-                            i === idx ? { ...item, quantity: e.target.value } : item
-                          )
-                        )
-                      }
-                      className="h-8 w-20 font-mono"
-                    />
-                    <select
-                      aria-label="Return item condition"
-                      value={line.condition}
-                      onChange={(e) =>
-                        setRefundLines((prev) =>
-                          prev.map((item, i) =>
-                            i === idx
-                              ? {
-                                  ...item,
-                                  condition: e.target.value as "resellable" | "damaged",
-                                }
-                              : item
-                          )
-                        )
-                      }
-                      className="h-8 rounded-md border border-border bg-card px-2"
-                    >
-                      <option value="resellable">Resellable (Restock)</option>
-                      <option value="damaged">Damaged</option>
-                    </select>
+          <div className="space-y-2 max-h-60 overflow-auto">
+            {refundLines.map((line, idx) => (
+              <div
+                key={line.sale_item_id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-2.5 text-xs"
+              >
+                <div>
+                  <div className="font-medium">{line.name}</div>
+                  <div className="text-muted-foreground font-mono">
+                    {line.sku} • Max refundable: {line.remaining}
                   </div>
                 </div>
-              ))}
-            </div>
-
-            <div className="grid gap-3 sm:grid-cols-2">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Refund Method</label>
-                <select
-                  aria-label="Refund payment method"
-                  value={refundMethodId || String(paymentMethodsQuery.data?.data[0]?.id ?? "")}
-                  onChange={(e) => setRefundMethodId(e.target.value)}
-                  className="mt-1 h-9 w-full rounded-lg border border-border bg-card px-2.5 text-sm"
-                >
-                  {(paymentMethodsQuery.data?.data ?? []).map((pm) => (
-                    <option key={pm.id} value={pm.id}>
-                      {pm.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="0"
+                    max={line.remaining}
+                    value={line.quantity}
+                    onChange={(e) =>
+                      setRefundLines((prev) =>
+                        prev.map((item, i) =>
+                          i === idx ? { ...item, quantity: e.target.value } : item
+                        )
+                      )
+                    }
+                    className="h-8 w-20 font-mono"
+                  />
+                  <Select
+                    value={line.condition}
+                    onValueChange={(v) =>
+                      setRefundLines((prev) =>
+                        prev.map((item, i) =>
+                          i === idx
+                            ? {
+                                ...item,
+                                condition: (v as "resellable" | "damaged") ?? "resellable",
+                              }
+                            : item
+                        )
+                      )
+                    }
+                  >
+                    <SelectTrigger className="h-8 w-40 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="resellable">Resellable (Restock)</SelectItem>
+                      <SelectItem value="damaged">Damaged</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Reason</label>
-                <Input
-                  placeholder="Return reason"
-                  value={refundReason}
-                  onChange={(e) => setRefundReason(e.target.value)}
-                  className="mt-1 h-9"
-                />
-              </div>
-            </div>
+            ))}
+          </div>
 
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setRefundSale(null)}>
-                Cancel
-              </Button>
-              <Button
-                disabled={refundMutation.isPending || refundReason.trim().length < 3}
-                onClick={() => refundMutation.mutate()}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label>Refund Method</Label>
+              <Select
+                value={refundMethodId || String(paymentMethodsQuery.data?.data[0]?.id ?? "")}
+                onValueChange={(v) => setRefundMethodId(v ?? "")}
               >
-                Confirm Refund
-              </Button>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select method" />
+                </SelectTrigger>
+                <SelectContent>
+                  {(paymentMethodsQuery.data?.data ?? []).map((pm) => (
+                    <SelectItem key={pm.id} value={String(pm.id)}>
+                      {pm.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Reason</Label>
+              <Input
+                placeholder="Return reason"
+                value={refundReason}
+                onChange={(e) => setRefundReason(e.target.value)}
+              />
             </div>
           </div>
-        </div>
-      )}
 
-      {receipt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-5 space-y-4">
-            <h3 className="font-semibold">Reprint Receipt — {receipt.transaction_number}</h3>
-            <pre className="max-h-96 overflow-auto rounded-lg bg-muted p-3 font-mono text-xs whitespace-pre-wrap">
-              {receipt.thermal_text}
-            </pre>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => window.print()}>
-                Print
-              </Button>
-              <Button onClick={() => setReceipt(null)}>Close</Button>
-            </div>
-          </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRefundSale(null)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={refundMutation.isPending || refundReason.trim().length < 3}
+              onClick={() => refundMutation.mutate()}
+            >
+              Confirm Refund
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(receipt)} onOpenChange={(o) => !o && setReceipt(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Reprint Receipt — {receipt?.transaction_number}</DialogTitle>
+          </DialogHeader>
+          <pre className="max-h-96 overflow-auto rounded-lg bg-muted p-3 font-mono text-xs whitespace-pre-wrap">
+            {receipt?.thermal_text}
+          </pre>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                if (receipt) {
+                  printThermalReceipt(
+                    receipt.thermal_text,
+                    receipt.paper_size,
+                    receipt.transaction_number
+                  );
+                }
+              }}
+            >
+              Print
+            </Button>
+            <Button onClick={() => setReceipt(null)}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
