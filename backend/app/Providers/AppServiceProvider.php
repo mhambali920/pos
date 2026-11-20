@@ -29,5 +29,17 @@ class AppServiceProvider extends ServiceProvider
 
             return Limit::perMinute(5)->by($key);
         });
+
+        RateLimiter::for('api', function (Request $request): Limit {
+            return Limit::perMinute(120)->by(
+                (string) ($request->user()?->getAuthIdentifier() ?? $request->ip())
+            );
+        });
+
+        RateLimiter::for('exports', function (Request $request): Limit {
+            return Limit::perMinute(10)->by(
+                (string) ($request->user()?->getAuthIdentifier() ?? $request->ip())
+            );
+        });
     }
 }

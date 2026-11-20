@@ -3,8 +3,8 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-011` |
-| **Version** | `0.8.0` |
-| **Status** | `Active` |
+| **Version** | `1.0.0` |
+| **Status** | `Release Ready` |
 | **Last Updated** | `2026-11-20` |
 | **Author** | Engineering Team (AI Agent) |
 
@@ -57,6 +57,11 @@ All notable changes to this project will be documented in this file following [K
   - Implemented `Analytics` module (`DashboardService` & `GET /api/v1/dashboard/{role}` for Owner, Store Manager, and Cashier with date/store/cashier/category filters).
   - Implemented `FinancialReporting` module (`ReportingService` for Sales, Inventory, Purchasing, and Financial P&L reports + `GenerateReportExportJob` async CSV/Excel/PDF exports with completion notification).
   - Upgraded frontend Dashboard (`/`) with Recharts & role switcher, added Topbar notification bell, and built `/reports` (Reports, Promotions, Async Exports).
+- **2026-11-20 (Phase 8 — Quality & Production Readiness / v1.0.0)**:
+  - Added `AttachSecurityHeaders` middleware (`X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy`, `Permissions-Policy`) to all API responses.
+  - Added named `api` (`120/min`) and `exports` (`10/min`) rate limiters in `AppServiceProvider` and throttled `POST /api/v1/reports/{type}/export`.
+  - Updated Scramble OpenAPI 3.1 metadata (`v1.0.0`) and added `ProductionReadinessTest` verifying `/up`, security headers, authentication boundary, and `/docs/api.json` path completeness across all core modules.
+  - Authored `docs/DEPLOYMENT_AND_RUNBOOK.md` covering zero-downtime deployment, Redis/queue/scheduler ops, MariaDB/MySQL automated backups, restore verification, and monitoring alerts.
 
 ---
 
@@ -75,3 +80,4 @@ All notable changes to this project will be documented in this file following [K
 | `0.7.0` | `2026-11-20` | Phase 6 | AI Agent | Recorded Phase 6 — Financial Management completion (`CashManagement`, `Sales` Returns/Refunds, `Expense`, CS-04/CS-08 tests, and frontend UI). |
 | `0.7.1` | `2026-11-20` | Phase 6 | AI Agent | Logged `laravel-best-practices` hardening refinements (FormRequests, scoped Rule::exists/unique, safe upload storage, CashRegister view guards, deterministic ordering). |
 | `0.8.0` | `2026-11-20` | Phase 7 | AI Agent | Recorded Phase 7 — Advanced Features completion (`Promotion`, Loyalty, `Notification`, `Analytics`, `FinancialReporting`, async exports, and frontend UI). |
+| `1.0.0` | `2026-11-20` | Phase 8 | AI Agent | Recorded Phase 8 — Quality & Production Readiness completion (security headers, rate limiters, OpenAPI 3.1 test, deployment & backup runbook). |

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Core\Http\Middleware\AttachRequestId;
+use App\Modules\Core\Http\Middleware\AttachSecurityHeaders;
 use App\Modules\Core\Http\Middleware\EnforceIdempotency;
 use App\Modules\Core\Http\Middleware\EnsureStoreAccess;
 use App\Modules\Core\Support\ApiResponse;
@@ -22,8 +23,9 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->appendToGroup('api', [
+        $middleware->append([
             AttachRequestId::class,
+            AttachSecurityHeaders::class,
         ]);
 
         $middleware->alias([

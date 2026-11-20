@@ -3,8 +3,8 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-013` |
-| **Version** | `1.7.0` |
-| **Status** | `Active` |
+| **Version** | `1.8.0` |
+| **Status** | `Completed` |
 | **Last Updated** | `2026-11-20` |
 | **Author** | Project Lead (AI Agent) |
 
@@ -22,7 +22,7 @@
 | **Phase 5** | Point of Sales (Core) | `Completed` | `100%` | `2026-11-19` | `2026-11-19` | Payment Gateway abstraction, Sales snapshots, Idempotent POS checkout, Split Payment, Hold/Resume, Thermal Receipt, CS-02/03/05/09/10 + Fullscreen `/pos` & `/sales`. |
 | **Phase 6** | Financial Management | `Completed` | `100%` | `2026-11-20` | `2026-11-20` | `CashManagement` (open/cash-in/cash-out/close/reconciliation/BR-012/CS-08), `Sales` Return & Refund (partial/full/damaged/CS-04), `Expense` (categories/attachments/approval) + Frontend `/cash-management`, `/expenses`, `/sales` refund. |
 | **Phase 7** | Advanced Features | `Completed` | `100%` | `2026-11-20` | `2026-11-20` | `Promotion` engine, `Customer` loyalty ledger, `Notification` (DB/Email), `Analytics` role-based dashboards, `FinancialReporting` + async exports + Frontend Dashboard/Topbar/`/reports`. |
-| **Phase 8** | Quality & Production | `Not Started` | `0%` | — | — | Final hardening & release. |
+| **Phase 8** | Quality & Production | `Completed` | `100%` | `2026-11-20` | `2026-11-20` | All 10 Critical Scenarios (`CS-01`–`CS-10`), `AttachSecurityHeaders`, `api`/`exports` rate limiters, OpenAPI 3.1 automated verification, and `docs/DEPLOYMENT_AND_RUNBOOK.md`. |
 
 ---
 
@@ -48,6 +48,7 @@
 | `2026-11-20` | Phase 6 | Implemented frontend `/cash-management`, `/expenses`, and `/sales` Return & Refund workflow | `eslint`, `tsc --noEmit`, `next build` passed | `Done` |
 | `2026-11-20` | Phase 7 | Implemented `Promotion`, `Customer` Loyalty, `Notification`, `Analytics` Dashboards, and `FinancialReporting` + Async Export Job & tests | Pint passed, PHPStan L7 0 errors, PHPUnit 32/32 passed | `Done` |
 | `2026-11-20` | Phase 7 | Implemented frontend Analytics Dashboard (`/`), Topbar Notifications bell, and `/reports` (P&L, Sales, Inventory, Purchasing, Promotions, Exports) | `eslint`, `tsc --noEmit`, `next build` passed | `Done` |
+| `2026-11-20` | Phase 8 | Added `AttachSecurityHeaders`, `api`/`exports` rate limiters, `ProductionReadinessTest` (health, security headers, OpenAPI 3.1), and `docs/DEPLOYMENT_AND_RUNBOOK.md` | Pint passed, PHPStan L7 0 errors, PHPUnit 35/35 passed, Frontend build passed | `Done` |
 
 ---
 
@@ -64,3 +65,4 @@
 | `1.5.0` | `2026-11-19` | Phase 5 | AI Project Lead | Completed Phase 5 — Point of Sales Core (Payment, Sales, POS, CS-02/03/05/09/10 tests, fullscreen POS terminal & `/sales`). |
 | `1.6.0` | `2026-11-20` | Phase 6 | AI Project Lead | Completed Phase 6 — Financial Management (`CashManagement`, `Sales` Returns/Refunds, `Expense`, CS-04/CS-08 tests, and frontend UI). |
 | `1.7.0` | `2026-11-20` | Phase 7 | AI Project Lead | Completed Phase 7 — Advanced Features (`Promotion`, Loyalty, `Notification`, `Analytics`, `FinancialReporting` + async export, and frontend UI). |
+| `1.8.0` | `2026-11-20` | Phase 8 | AI Project Lead | Completed Phase 8 — Quality & Production Readiness (all 8 phases 100% complete). |

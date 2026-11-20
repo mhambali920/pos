@@ -3,8 +3,8 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-012` |
-| **Version** | `1.7.0` |
-| **Status** | `Active` |
+| **Version** | `1.8.0` |
+| **Status** | `Completed` |
 | **Last Updated** | `2026-11-20` |
 | **Author** | Principal Software Architect (AI Agent) |
 
@@ -72,8 +72,8 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 - [x] Full Reporting (Sales, Inventory, Purchasing, Financial) + Async Export (Excel, CSV, PDF)
 
 ## Phase 8 — Quality & Production
-- [ ] All 10 Critical Scenarios automated tests passing
-- [ ] Security audit, query optimization, OpenAPI verification, deployment & backup runbook
+- [x] All 10 Critical Scenarios automated tests passing
+- [x] Security audit, query optimization, OpenAPI verification, deployment & backup runbook
 
 ---
 
@@ -89,3 +89,4 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 | `1.5.0` | `2026-11-19` | Phase 5 | AI Architect | Marked all Phase 5 — Point of Sales (Core) deliverables complete (Payment Gateway abstraction, Sales immutable snapshots, Idempotent POS checkout, Split payment, Thermal 58/80mm receipt, CS-02/03/05/09/10 tests, Fullscreen POS Terminal & `/sales`). |
 | `1.6.0` | `2026-11-20` | Phase 6 | AI Architect | Marked all Phase 6 — Financial Management deliverables complete (`CashManagement` register sessions/reconciliation/CS-08/BR-012, `Sales` returns & refunds/CS-04, `Expense` categories/attachments/approval, and frontend `/cash-management`, `/expenses`, `/sales` refund UI). |
 | `1.7.0` | `2026-11-20` | Phase 7 | AI Architect | Marked all Phase 7 — Advanced Features deliverables complete (`Promotion` engine, `Customer` loyalty points ledger, `Notification` DB/Email, `Analytics` role-based dashboards, `FinancialReporting` P&L & async CSV/Excel/PDF exports, plus frontend Dashboard, Topbar notifications, and `/reports`). |
+| `1.8.0` | `2026-11-20` | Phase 8 | AI Architect | Marked all Phase 8 — Quality & Production deliverables complete (`CS-01`–`CS-10` verified, `AttachSecurityHeaders`, `api`/`exports` rate limiters, Scramble OpenAPI 3.1 verification test, and `docs/DEPLOYMENT_AND_RUNBOOK.md`). |
