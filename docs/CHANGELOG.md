@@ -39,6 +39,10 @@ All notable changes to this project will be documented in this file following [K
   - Implemented `Purchasing` module (`purchase_orders`, `goods_receipts`, `purchase_invoices`, `purchase_payments`, `purchase_returns`) with `bcmath` decimal totals, PO approval workflow, partial/full/damaged GRN posting good qty into `InventoryLedgerService` (with MAC update), supplier balance tracking, overpayment guard, and supplier credit notes on return.
   - Added end-to-end `PurchasingLifecycleTest` verifying PO → GRN → Invoice → Payment → Return → Inventory Reconciliation (0 discrepancies).
   - Built frontend `/purchasing` page with tabs for Purchase Orders, Goods Receipts, Invoices, and Returns.
+- **2026-11-19 (Phase 5 — Point of Sales Core)**:
+  - Implemented `Payment` (`payment_methods`, `PaymentGatewayContract`, `DefaultPaymentGateway`), `Sales` (`sales`, `sale_items` immutable snapshots, `payments`, `ReceiptService` 58mm/80mm thermal formatter, `VoidSaleAction`), and `POS` (`CreatePosTransactionAction`, `RecordPosPaymentAction`, `CompletePosCheckoutAction` with `idempotent` & `store.access` middleware).
+  - Verified **CS-02** (idempotent checkout replay), **CS-03** (payment failure rollback), **CS-05** (split payment validation), **CS-09** (product soft-delete preserving sales), and **CS-10** (price change preserving historical snapshots) in `PosCheckoutCriticalScenariosTest`.
+  - Built dedicated fullscreen POS Terminal (`/pos`) with auto-focused barcode input, keyboard shortcuts (`F2`/`Esc`), Zustand cart store, payment & exact cash controls, thermal receipt modal, and `/sales` history & void page.
 
 ---
 
@@ -53,3 +57,4 @@ All notable changes to this project will be documented in this file following [K
 | `0.3.0` | `2026-11-19` | Phase 2 | AI Agent | Recorded Phase 2 — Master Data completion (8 backend modules + 4 frontend pages + tests). |
 | `0.4.0` | `2026-11-19` | Phase 3 | AI Agent | Recorded Phase 3 — Inventory Management completion (ledger, locking, MAC, adjustments, transfers, opname, CS-01/CS-07, frontend UI). |
 | `0.5.0` | `2026-11-19` | Phase 4 | AI Agent | Recorded Phase 4 — Purchasing Management completion (PO, GRN, Invoices, Payments, Returns, tests, frontend UI). |
+| `0.6.0` | `2026-11-19` | Phase 5 | AI Agent | Recorded Phase 5 — Point of Sales Core completion (Payment, Sales, POS, CS-02/03/05/09/10 tests, fullscreen POS Terminal & `/sales`). |

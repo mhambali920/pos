@@ -52,12 +52,12 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 - [x] Purchase Return (reason, stock out, credit note)
 
 ## Phase 5 — Point of Sales (Core)
-- [ ] Fast POS UI (keyboard shortcuts, barcode scanner, category nav, product grid, cart)
-- [ ] Cart operations (add/remove/qty, permissioned price override, item/cart discount, hold/resume)
-- [ ] Idempotent atomic checkout (server-side calculation, stock deduction, payment, audit log)
-- [ ] Multi-payment & Split payment + Payment Gateway abstraction
-- [ ] Receipt generation (Thermal 58mm, Thermal 80mm, PDF, reprint)
-- [ ] Sales Management (list, detail, history, authorized cancellation/void)
+- [x] Fast POS UI (keyboard shortcuts, barcode scanner, category nav, product grid, cart)
+- [x] Cart operations (add/remove/qty, permissioned price override, item/cart discount, hold/resume)
+- [x] Idempotent atomic checkout (server-side calculation, stock deduction, payment, audit log)
+- [x] Multi-payment & Split payment + Payment Gateway abstraction
+- [x] Receipt generation (Thermal 58mm, Thermal 80mm, PDF, reprint)
+- [x] Sales Management (list, detail, history, authorized cancellation/void)
 
 ## Phase 6 — Financial Management
 - [ ] Cash Register Session (open, cash in/out, close, expected vs actual reconciliation)
@@ -86,3 +86,4 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 | `1.2.0` | `2026-11-19` | Phase 2 | AI Architect | Marked all Phase 2 — Master Data deliverables complete (8 backend modules + frontend catalog/partner pages + tests). |
 | `1.3.0` | `2026-11-19` | Phase 3 | AI Architect | Marked all Phase 3 — Inventory Management deliverables complete (Inventory ledger, locking, MAC, opname, adjustment, transfer, CS-01 & CS-07 tests, frontend `/inventory`). |
 | `1.4.0` | `2026-11-19` | Phase 4 | AI Architect | Marked all Phase 4 — Purchasing Management deliverables complete (PO, GRN, Invoices, Payments, Returns + Credit Note + Frontend `/purchasing`). |
+| `1.5.0` | `2026-11-19` | Phase 5 | AI Architect | Marked all Phase 5 — Point of Sales (Core) deliverables complete (Payment Gateway abstraction, Sales immutable snapshots, Idempotent POS checkout, Split payment, Thermal 58/80mm receipt, CS-02/03/05/09/10 tests, Fullscreen POS Terminal & `/sales`). |

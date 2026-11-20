@@ -10,8 +10,11 @@ use App\Modules\Customer\CustomerServiceProvider;
 use App\Modules\IAM\IAMServiceProvider;
 use App\Modules\Inventory\InventoryServiceProvider;
 use App\Modules\Organization\OrganizationServiceProvider;
+use App\Modules\Payment\PaymentServiceProvider;
+use App\Modules\POS\POSServiceProvider;
 use App\Modules\Product\ProductServiceProvider;
 use App\Modules\Purchasing\PurchasingServiceProvider;
+use App\Modules\Sales\SalesServiceProvider;
 use App\Modules\Settings\SettingsServiceProvider;
 use App\Modules\StockAdjustment\StockAdjustmentServiceProvider;
 use App\Modules\StockTransfer\StockTransferServiceProvider;
@@ -42,4 +45,7 @@ return [
     StockAdjustmentServiceProvider::class,
     StockTransferServiceProvider::class,
     PurchasingServiceProvider::class,
+    PaymentServiceProvider::class,
+    SalesServiceProvider::class,
+    POSServiceProvider::class,
 ];

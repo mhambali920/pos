@@ -143,6 +143,7 @@ export interface ProductItem {
   product_type: "standard" | "variant" | "bundle" | "service" | "non_stock";
   name: string;
   description: string | null;
+  image_path: string | null;
   track_inventory: boolean;
   is_active: boolean;
   category?: { id: number; code: string; name: string } | null;
@@ -252,4 +253,36 @@ export interface PurchaseReturnSummary {
   total_amount: string;
   status: string;
   supplier?: { id: number; company_name: string } | null;
+}
+
+export interface PaymentMethodItem {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+}
+
+export interface SaleSummary {
+  id: number;
+  transaction_number: string;
+  status: string;
+  subtotal: string;
+  discount_total: string;
+  tax_total: string;
+  grand_total: string;
+  paid_total: string;
+  change_amount: string;
+  completed_at: string | null;
+  created_at: string;
+  customer?: { id: number; name: string } | null;
+  cashier?: { id: number; name: string } | null;
+}
+
+export interface ReceiptPayload {
+  paper_size: "58mm" | "80mm";
+  transaction_number: string;
+  grand_total: string;
+  paid_total: string;
+  change_amount: string;
+  thermal_text: string;
 }

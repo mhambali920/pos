@@ -97,12 +97,25 @@ export default function ProductsPage() {
                     return (
                       <tr key={product.id}>
                         <td className="py-3 pr-4">
-                          <div className="font-medium">{product.name}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {product.category?.name ?? "Uncategorized"}
-                            {product.variants.length > 1
-                              ? ` • ${product.variants.length} variants`
-                              : ""}
+                          <div className="flex items-center gap-3">
+                            {product.image_path ? (
+                              <img
+                                src={product.image_path}
+                                alt={product.name}
+                                className="h-10 w-12 rounded-md border border-border object-cover shrink-0"
+                              />
+                            ) : (
+                              <div className="h-10 w-12 rounded-md border border-border bg-muted shrink-0" />
+                            )}
+                            <div>
+                              <div className="font-medium">{product.name}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {product.category?.name ?? "Uncategorized"}
+                                {product.variants.length > 1
+                                  ? ` • ${product.variants.length} variants`
+                                  : ""}
+                              </div>
+                            </div>
                           </div>
                         </td>
                         <td className="py-3 pr-4">

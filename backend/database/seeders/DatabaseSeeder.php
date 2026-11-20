@@ -8,6 +8,7 @@ use App\Models\User;
 use App\Modules\Customer\Models\Customer;
 use App\Modules\IAM\Database\Seeders\RolesAndPermissionsSeeder;
 use App\Modules\Organization\Models\Organization;
+use App\Modules\Payment\Models\PaymentMethod;
 use App\Modules\Store\Models\Store;
 use App\Modules\Tax\Models\Tax;
 use App\Modules\Unit\Models\Unit;
@@ -88,6 +89,22 @@ class DatabaseSeeder extends Seeder
                 'is_active' => true,
             ],
         );
+
+        $defaultPaymentMethods = [
+            ['code' => 'CASH', 'name' => 'Cash', 'type' => 'cash'],
+            ['code' => 'DEBIT', 'name' => 'Debit Card', 'type' => 'debit'],
+            ['code' => 'CREDIT', 'name' => 'Credit Card', 'type' => 'credit'],
+            ['code' => 'TRANSFER', 'name' => 'Bank Transfer', 'type' => 'transfer'],
+            ['code' => 'QRIS', 'name' => 'QRIS', 'type' => 'qris'],
+            ['code' => 'EWALLET', 'name' => 'E-Wallet', 'type' => 'ewallet'],
+        ];
+
+        foreach ($defaultPaymentMethods as $pm) {
+            PaymentMethod::query()->firstOrCreate(
+                ['organization_id' => $organization->id, 'code' => $pm['code']],
+                ['name' => $pm['name'], 'type' => $pm['type'], 'is_active' => true],
+            );
+        }
 
         $admin = User::query()->firstOrCreate(
             ['email' => 'admin@pos.local'],
