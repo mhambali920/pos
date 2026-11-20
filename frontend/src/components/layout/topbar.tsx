@@ -1,11 +1,21 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, LogOut, Moon, Store as StoreIcon, Sun } from "lucide-react";
+import { Bell, LogOut, Moon, Settings, Store as StoreIcon, Sun } from "lucide-react";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   Select,
@@ -19,6 +29,15 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { useAuthStore } from "@/stores/auth-store";
 import { apiFetch } from "@/lib/api";
 import type { NotificationPayload } from "@/lib/types";
+
+function getInitials(name?: string | null): string {
+  if (!name) return "U";
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
+}
 
 export function Topbar() {
   const router = useRouter();
@@ -147,19 +166,58 @@ export function Topbar() {
           <Moon className="h-4 w-4 block dark:hidden" />
         </Button>
 
-        {user && (
-          <div className="hidden sm:flex flex-col items-end pr-1">
-            <span className="text-xs font-semibold leading-tight">{user.name}</span>
-            <span className="text-[11px] text-muted-foreground">
-              {user.roles[0] ?? "Staff"}
-            </span>
-          </div>
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full"
+                  aria-label="User menu"
+                />
+              }
+            >
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                  {getInitials(user.name)}
+                </AvatarFallback>
+              </Avatar>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-60">
+              <div className="flex items-center gap-2.5 px-2 py-2">
+                <Avatar className="h-9 w-9 shrink-0">
+                  <AvatarFallback className="bg-primary text-primary-foreground text-xs font-semibold">
+                    {getInitials(user.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold leading-tight">{user.name}</div>
+                  <div className="truncate text-xs text-muted-foreground">{user.email}</div>
+                  <Badge variant="muted" className="mt-1">
+                    {user.roles[0] ?? "Staff"}
+                  </Badge>
+                </div>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem render={<Link href="/settings" />}>
+                <Settings className="h-4 w-4" />
+                Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem variant="destructive" onClick={handleLogout}>
+                <LogOut className="h-4 w-4" />
+                Logout
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link href="/login">
+            <Button variant="outline" size="sm">
+              Sign In
+            </Button>
+          </Link>
         )}
-
-        <Button variant="outline" size="sm" onClick={handleLogout}>
-          <LogOut className="h-3.5 w-3.5" />
-          <span className="hidden sm:inline">Logout</span>
-        </Button>
       </div>
     </header>
   );
