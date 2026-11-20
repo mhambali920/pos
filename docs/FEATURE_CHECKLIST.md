@@ -3,7 +3,7 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-012` |
-| **Version** | `1.6.0` |
+| **Version** | `1.7.0` |
 | **Status** | `Active` |
 | **Last Updated** | `2026-11-20` |
 | **Author** | Principal Software Architect (AI Agent) |
@@ -65,11 +65,11 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 - [x] Expense Management (categories, attachments, approval workflow)
 
 ## Phase 7 — Advanced Features
-- [ ] Promotion & Discount Engine (%, fixed, BOGO, Buy X Get Y, bundle, coupon, time-based, stacking/priority)
-- [ ] Loyalty Points & Member Discounts
-- [ ] Notification System (DB, Email, optional Reverb realtime)
-- [ ] Role-based Dashboards (Owner, Store Manager, Cashier) with date/store/cashier/category filters
-- [ ] Full Reporting (Sales, Inventory, Purchasing, Financial) + Async Export (Excel, CSV, PDF)
+- [x] Promotion & Discount Engine (%, fixed, BOGO, Buy X Get Y, bundle, coupon, time-based, stacking/priority)
+- [x] Loyalty Points & Member Discounts
+- [x] Notification System (DB, Email, optional Reverb realtime)
+- [x] Role-based Dashboards (Owner, Store Manager, Cashier) with date/store/cashier/category filters
+- [x] Full Reporting (Sales, Inventory, Purchasing, Financial) + Async Export (Excel, CSV, PDF)
 
 ## Phase 8 — Quality & Production
 - [ ] All 10 Critical Scenarios automated tests passing
@@ -88,3 +88,4 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 | `1.4.0` | `2026-11-19` | Phase 4 | AI Architect | Marked all Phase 4 — Purchasing Management deliverables complete (PO, GRN, Invoices, Payments, Returns + Credit Note + Frontend `/purchasing`). |
 | `1.5.0` | `2026-11-19` | Phase 5 | AI Architect | Marked all Phase 5 — Point of Sales (Core) deliverables complete (Payment Gateway abstraction, Sales immutable snapshots, Idempotent POS checkout, Split payment, Thermal 58/80mm receipt, CS-02/03/05/09/10 tests, Fullscreen POS Terminal & `/sales`). |
 | `1.6.0` | `2026-11-20` | Phase 6 | AI Architect | Marked all Phase 6 — Financial Management deliverables complete (`CashManagement` register sessions/reconciliation/CS-08/BR-012, `Sales` returns & refunds/CS-04, `Expense` categories/attachments/approval, and frontend `/cash-management`, `/expenses`, `/sales` refund UI). |
+| `1.7.0` | `2026-11-20` | Phase 7 | AI Architect | Marked all Phase 7 — Advanced Features deliverables complete (`Promotion` engine, `Customer` loyalty points ledger, `Notification` DB/Email, `Analytics` role-based dashboards, `FinancialReporting` P&L & async CSV/Excel/PDF exports, plus frontend Dashboard, Topbar notifications, and `/reports`). |

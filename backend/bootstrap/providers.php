@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Analytics\AnalyticsServiceProvider;
 use App\Modules\AuditLog\AuditLogServiceProvider;
 use App\Modules\Brand\BrandServiceProvider;
 use App\Modules\CashManagement\CashManagementServiceProvider;
@@ -9,12 +10,15 @@ use App\Modules\Category\CategoryServiceProvider;
 use App\Modules\Core\CoreServiceProvider;
 use App\Modules\Customer\CustomerServiceProvider;
 use App\Modules\Expense\ExpenseServiceProvider;
+use App\Modules\FinancialReporting\FinancialReportingServiceProvider;
 use App\Modules\IAM\IAMServiceProvider;
 use App\Modules\Inventory\InventoryServiceProvider;
+use App\Modules\Notification\NotificationServiceProvider;
 use App\Modules\Organization\OrganizationServiceProvider;
 use App\Modules\Payment\PaymentServiceProvider;
 use App\Modules\POS\POSServiceProvider;
 use App\Modules\Product\ProductServiceProvider;
+use App\Modules\Promotion\PromotionServiceProvider;
 use App\Modules\Purchasing\PurchasingServiceProvider;
 use App\Modules\Sales\SalesServiceProvider;
 use App\Modules\Settings\SettingsServiceProvider;
@@ -52,4 +56,8 @@ return [
     POSServiceProvider::class,
     CashManagementServiceProvider::class,
     ExpenseServiceProvider::class,
+    PromotionServiceProvider::class,
+    NotificationServiceProvider::class,
+    AnalyticsServiceProvider::class,
+    FinancialReportingServiceProvider::class,
 ];

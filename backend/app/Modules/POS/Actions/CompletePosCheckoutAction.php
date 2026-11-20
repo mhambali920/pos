@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\POS\Actions;
 
 use App\Modules\AuditLog\Contracts\AuditLoggerContract;
+use App\Modules\Customer\Services\LoyaltyService;
 use App\Modules\Inventory\Contracts\InventoryLedgerContract;
 use App\Modules\Inventory\Data\StockMutationData;
 use App\Modules\Inventory\Domain\Enums\StockMovementType;
@@ -20,6 +21,7 @@ final readonly class CompletePosCheckoutAction
     public function __construct(
         private InventoryLedgerContract $ledger,
         private AuditLoggerContract $auditLogger,
+        private LoyaltyService $loyaltyService,
     ) {}
 
     public function execute(Sale $sale, Store $store, int $actorId): Sale
@@ -116,6 +118,15 @@ final readonly class CompletePosCheckoutAction
                 'change_amount' => $changeTotal,
                 'completed_at' => now(),
             ]);
+
+            if ($lockedSale->customer_id !== null) {
+                $this->loyaltyService->earnFromSale(
+                    customerId: $lockedSale->customer_id,
+                    saleId: $lockedSale->id,
+                    grandTotal: $lockedSale->grand_total,
+                    actorId: $actorId,
+                );
+            }
 
             $this->auditLogger->log(
                 module: 'POS',

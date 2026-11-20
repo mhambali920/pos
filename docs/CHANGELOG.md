@@ -3,7 +3,7 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-011` |
-| **Version** | `0.7.1` |
+| **Version** | `0.8.0` |
 | **Status** | `Active` |
 | **Last Updated** | `2026-11-20` |
 | **Author** | Engineering Team (AI Agent) |
@@ -50,6 +50,13 @@ All notable changes to this project will be documented in this file following [K
   - Seeded default `CashRegister` (`REG-01`) and 5 `ExpenseCategory` records in `DatabaseSeeder`.
   - Built frontend `/cash-management`, `/expenses`, and `/sales` Return & Refund UI (with `FormData` upload support in `apiFetch`).
   - Hardened Phase 6 backend against `laravel-best-practices`: replaced client-extension upload handling with server-verified `$file->store(..., 'local')`, extracted `RefundSaleRequest` and `StoreExpenseRequest` with tenant/store-scoped `Rule::exists` & `Rule::unique`, enforced least-privilege view permissions on `CashRegisterController`, removed redundant `Schema::hasTable()` metadata queries from `CashReconciliationService`, and added deterministic `orderBy` tie-breakers + `Str::upper()`.
+- **2026-11-20 (Phase 7 — Advanced Features)**:
+  - Implemented `Promotion` module (`promotions`, `promotion_usages`, `PromotionEngineService` supporting percentage, fixed amount, BOGO, Buy X Get Y, bundle, coupon, time-based, priority & stackable evaluation).
+  - Implemented Customer Loyalty Points ledger (`loyalty_point_transactions`, `LoyaltyService` auto-earning on POS checkout + atomic redemption/adjustment endpoints).
+  - Implemented `Notification` module (`app_notifications`, `NotificationDispatcherService` for database + optional email channels, read/read-all endpoints).
+  - Implemented `Analytics` module (`DashboardService` & `GET /api/v1/dashboard/{role}` for Owner, Store Manager, and Cashier with date/store/cashier/category filters).
+  - Implemented `FinancialReporting` module (`ReportingService` for Sales, Inventory, Purchasing, and Financial P&L reports + `GenerateReportExportJob` async CSV/Excel/PDF exports with completion notification).
+  - Upgraded frontend Dashboard (`/`) with Recharts & role switcher, added Topbar notification bell, and built `/reports` (Reports, Promotions, Async Exports).
 
 ---
 
@@ -67,3 +74,4 @@ All notable changes to this project will be documented in this file following [K
 | `0.6.0` | `2026-11-19` | Phase 5 | AI Agent | Recorded Phase 5 — Point of Sales Core completion (Payment, Sales, POS, CS-02/03/05/09/10 tests, fullscreen POS Terminal & `/sales`). |
 | `0.7.0` | `2026-11-20` | Phase 6 | AI Agent | Recorded Phase 6 — Financial Management completion (`CashManagement`, `Sales` Returns/Refunds, `Expense`, CS-04/CS-08 tests, and frontend UI). |
 | `0.7.1` | `2026-11-20` | Phase 6 | AI Agent | Logged `laravel-best-practices` hardening refinements (FormRequests, scoped Rule::exists/unique, safe upload storage, CashRegister view guards, deterministic ordering). |
+| `0.8.0` | `2026-11-20` | Phase 7 | AI Agent | Recorded Phase 7 — Advanced Features completion (`Promotion`, Loyalty, `Notification`, `Analytics`, `FinancialReporting`, async exports, and frontend UI). |

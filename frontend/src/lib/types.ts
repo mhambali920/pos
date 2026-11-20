@@ -392,3 +392,67 @@ export interface ExpenseItem {
   creator?: { id: number; name: string } | null;
   approver?: { id: number; name: string } | null;
 }
+
+export interface PromotionItem {
+  id: number;
+  code: string;
+  name: string;
+  type: string;
+  priority: number;
+  is_stackable: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  min_purchase: string;
+  max_discount: string | null;
+  usage_limit: number | null;
+  usage_count: number;
+  rules: Record<string, unknown>;
+  is_active: boolean;
+}
+
+export interface NotificationItem {
+  id: number;
+  type: string;
+  title: string;
+  body: string;
+  read_at: string | null;
+  created_at: string;
+}
+
+export interface NotificationPayload {
+  unread_count: number;
+  items: NotificationItem[];
+}
+
+export interface DashboardPayload {
+  role: "owner" | "manager" | "cashier";
+  period: { from: string; to: string };
+  kpis: Record<string, string | number | boolean>;
+  daily_trend?: Array<{ date: string; revenue: string }>;
+  top_products?: Array<{ sku: string; name: string; total_qty: string; total_revenue: string }>;
+  recent_sales?: Array<{
+    id: number;
+    transaction_number: string;
+    grand_total: string;
+    status: string;
+  }>;
+}
+
+export interface ReportPayload {
+  report_type: string;
+  period?: { from: string; to: string };
+  summary: Record<string, string | number>;
+  payment_breakdown?: Record<string, string>;
+  expense_breakdown?: Record<string, string>;
+  rows: Array<Record<string, string | number | boolean>>;
+}
+
+export interface ReportExportItem {
+  id: number;
+  report_type: string;
+  format: string;
+  status: string;
+  file_path: string | null;
+  created_at: string;
+  completed_at: string | null;
+}
