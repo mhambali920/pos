@@ -262,6 +262,17 @@ export interface PaymentMethodItem {
   type: string;
 }
 
+export interface SaleItemSummary {
+  id: number;
+  product_variant_id: number;
+  sku_snapshot: string;
+  product_name_snapshot: string;
+  quantity: string;
+  unit_price_snapshot: string;
+  line_total: string;
+  return_items?: Array<{ id: number; quantity: string; condition: string }>;
+}
+
 export interface SaleSummary {
   id: number;
   transaction_number: string;
@@ -276,6 +287,27 @@ export interface SaleSummary {
   created_at: string;
   customer?: { id: number; name: string } | null;
   cashier?: { id: number; name: string } | null;
+  items?: SaleItemSummary[];
+}
+
+export interface SaleReturnSummary {
+  id: number;
+  return_number: string;
+  type: string;
+  reason: string;
+  refund_amount: string;
+  status: string;
+  created_at: string;
+  sale?: { id: number; transaction_number: string } | null;
+  refund_method?: { id: number; name: string } | null;
+  creator?: { id: number; name: string } | null;
+  items?: Array<{
+    id: number;
+    quantity: string;
+    refund_subtotal: string;
+    condition: string;
+    sale_item?: { sku_snapshot: string; product_name_snapshot: string } | null;
+  }>;
 }
 
 export interface ReceiptPayload {
@@ -285,4 +317,78 @@ export interface ReceiptPayload {
   paid_total: string;
   change_amount: string;
   thermal_text: string;
+}
+
+export interface CashRegister {
+  id: number;
+  code: string;
+  name: string;
+  is_active: boolean;
+}
+
+export interface CashRegisterMovement {
+  id: number;
+  type: "cash_in" | "cash_out" | "cash_expense" | "cash_adjustment";
+  amount: string;
+  reason: string;
+  created_at: string;
+  creator?: { id: number; name: string } | null;
+}
+
+export interface CashRegisterSession {
+  id: number;
+  cash_register_id: number;
+  opened_at: string;
+  closed_at: string | null;
+  opening_balance: string;
+  expected_cash: string;
+  actual_cash: string | null;
+  cash_difference: string | null;
+  status: "open" | "closed";
+  closing_notes: string | null;
+  register?: CashRegister | null;
+  user?: { id: number; name: string } | null;
+  movements?: CashRegisterMovement[];
+}
+
+export interface CashReconciliationSummary {
+  opening_balance: string;
+  cash_sales: string;
+  cash_in: string;
+  cash_out: string;
+  cash_refund: string;
+  cash_expense: string;
+  cash_adjustment: string;
+  expected_cash: string;
+  actual_cash: string | null;
+  cash_difference: string | null;
+  reconciliation_status: "open" | "balanced" | "overage" | "shortage";
+}
+
+export interface CurrentRegisterPayload {
+  session: CashRegisterSession;
+  summary: CashReconciliationSummary;
+}
+
+export interface ExpenseCategory {
+  id: number;
+  code: string;
+  name: string;
+  description: string | null;
+  is_active: boolean;
+}
+
+export interface ExpenseItem {
+  id: number;
+  expense_number: string;
+  expense_date: string;
+  amount: string;
+  description: string;
+  attachment_path: string | null;
+  status: "draft" | "pending_approval" | "approved" | "rejected";
+  rejection_reason: string | null;
+  category?: ExpenseCategory | null;
+  payment_method?: PaymentMethodItem | null;
+  creator?: { id: number; name: string } | null;
+  approver?: { id: number; name: string } | null;
 }

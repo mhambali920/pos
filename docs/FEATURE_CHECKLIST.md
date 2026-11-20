@@ -3,9 +3,9 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-012` |
-| **Version** | `1.0.0` |
+| **Version** | `1.6.0` |
 | **Status** | `Active` |
-| **Last Updated** | `2026-11-19` |
+| **Last Updated** | `2026-11-20` |
 | **Author** | Principal Software Architect (AI Agent) |
 
 Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
@@ -60,9 +60,9 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 - [x] Sales Management (list, detail, history, authorized cancellation/void)
 
 ## Phase 6 — Financial Management
-- [ ] Cash Register Session (open, cash in/out, close, expected vs actual reconciliation)
-- [ ] Sales Return, Refund (partial/full) & Exchange with reference to original sale
-- [ ] Expense Management (categories, attachments, approval workflow)
+- [x] Cash Register Session (open, cash in/out, close, expected vs actual reconciliation)
+- [x] Sales Return, Refund (partial/full) & Exchange with reference to original sale
+- [x] Expense Management (categories, attachments, approval workflow)
 
 ## Phase 7 — Advanced Features
 - [ ] Promotion & Discount Engine (%, fixed, BOGO, Buy X Get Y, bundle, coupon, time-based, stacking/priority)
@@ -87,3 +87,4 @@ Legend: `[ ]` Not Started | `[/]` In Progress | `[x]` Done & Verified
 | `1.3.0` | `2026-11-19` | Phase 3 | AI Architect | Marked all Phase 3 — Inventory Management deliverables complete (Inventory ledger, locking, MAC, opname, adjustment, transfer, CS-01 & CS-07 tests, frontend `/inventory`). |
 | `1.4.0` | `2026-11-19` | Phase 4 | AI Architect | Marked all Phase 4 — Purchasing Management deliverables complete (PO, GRN, Invoices, Payments, Returns + Credit Note + Frontend `/purchasing`). |
 | `1.5.0` | `2026-11-19` | Phase 5 | AI Architect | Marked all Phase 5 — Point of Sales (Core) deliverables complete (Payment Gateway abstraction, Sales immutable snapshots, Idempotent POS checkout, Split payment, Thermal 58/80mm receipt, CS-02/03/05/09/10 tests, Fullscreen POS Terminal & `/sales`). |
+| `1.6.0` | `2026-11-20` | Phase 6 | AI Architect | Marked all Phase 6 — Financial Management deliverables complete (`CashManagement` register sessions/reconciliation/CS-08/BR-012, `Sales` returns & refunds/CS-04, `Expense` categories/attachments/approval, and frontend `/cash-management`, `/expenses`, `/sales` refund UI). |

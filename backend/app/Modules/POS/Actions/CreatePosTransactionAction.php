@@ -6,6 +6,7 @@ namespace App\Modules\POS\Actions;
 
 use App\Models\User;
 use App\Modules\AuditLog\Contracts\AuditLoggerContract;
+use App\Modules\CashManagement\Models\CashRegisterSession;
 use App\Modules\Core\Domain\ValueObjects\Money;
 use App\Modules\Product\Models\ProductVariant;
 use App\Modules\Product\Services\PriceResolverService;
@@ -38,11 +39,21 @@ final readonly class CreatePosTransactionAction
 
             $isHold = ($data['hold'] ?? false) === true;
 
+            $sessionId = isset($data['cash_register_session_id']) && is_numeric($data['cash_register_session_id'])
+                ? (int) $data['cash_register_session_id']
+                : CashRegisterSession::query()
+                    ->where('store_id', $store->id)
+                    ->where('user_id', $cashier->id)
+                    ->where('status', 'open')
+                    ->orderByDesc('opened_at')
+                    ->orderByDesc('id')
+                    ->value('id');
+
             $sale = Sale::query()->create([
                 'organization_id' => $store->organization_id,
                 'store_id' => $store->id,
                 'warehouse_id' => $warehouseId,
-                'cash_register_session_id' => $data['cash_register_session_id'] ?? null,
+                'cash_register_session_id' => $sessionId,
                 'customer_id' => $data['customer_id'] ?? null,
                 'cashier_id' => $cashier->id,
                 'transaction_number' => 'POS-'.$store->code.'-'.now()->format('YmdHis').'-'.strtoupper(Str::random(4)),

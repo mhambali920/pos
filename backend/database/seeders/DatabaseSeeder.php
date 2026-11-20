@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Modules\CashManagement\Models\CashRegister;
 use App\Modules\Customer\Models\Customer;
+use App\Modules\Expense\Models\ExpenseCategory;
 use App\Modules\IAM\Database\Seeders\RolesAndPermissionsSeeder;
 use App\Modules\Organization\Models\Organization;
 use App\Modules\Payment\Models\PaymentMethod;
@@ -103,6 +105,30 @@ class DatabaseSeeder extends Seeder
             PaymentMethod::query()->firstOrCreate(
                 ['organization_id' => $organization->id, 'code' => $pm['code']],
                 ['name' => $pm['name'], 'type' => $pm['type'], 'is_active' => true],
+            );
+        }
+
+        CashRegister::query()->firstOrCreate(
+            ['store_id' => $store->id, 'code' => 'REG-01'],
+            [
+                'organization_id' => $organization->id,
+                'name' => 'Main Counter Register',
+                'is_active' => true,
+            ],
+        );
+
+        $defaultExpenseCategories = [
+            ['code' => 'UTIL', 'name' => 'Utilities & Electricity'],
+            ['code' => 'RENT', 'name' => 'Store Rent'],
+            ['code' => 'SUPP', 'name' => 'Store Supplies'],
+            ['code' => 'MAINT', 'name' => 'Maintenance & Repairs'],
+            ['code' => 'MISC', 'name' => 'Miscellaneous'],
+        ];
+
+        foreach ($defaultExpenseCategories as $cat) {
+            ExpenseCategory::query()->firstOrCreate(
+                ['organization_id' => $organization->id, 'code' => $cat['code']],
+                ['name' => $cat['name'], 'is_active' => true],
             );
         }
 

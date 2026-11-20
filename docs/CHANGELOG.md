@@ -3,9 +3,9 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-011` |
-| **Version** | `0.1.0` |
+| **Version** | `0.7.1` |
 | **Status** | `Active` |
-| **Last Updated** | `2026-11-19` |
+| **Last Updated** | `2026-11-20` |
 | **Author** | Engineering Team (AI Agent) |
 
 All notable changes to this project will be documented in this file following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and Semantic Versioning.
@@ -43,6 +43,13 @@ All notable changes to this project will be documented in this file following [K
   - Implemented `Payment` (`payment_methods`, `PaymentGatewayContract`, `DefaultPaymentGateway`), `Sales` (`sales`, `sale_items` immutable snapshots, `payments`, `ReceiptService` 58mm/80mm thermal formatter, `VoidSaleAction`), and `POS` (`CreatePosTransactionAction`, `RecordPosPaymentAction`, `CompletePosCheckoutAction` with `idempotent` & `store.access` middleware).
   - Verified **CS-02** (idempotent checkout replay), **CS-03** (payment failure rollback), **CS-05** (split payment validation), **CS-09** (product soft-delete preserving sales), and **CS-10** (price change preserving historical snapshots) in `PosCheckoutCriticalScenariosTest`.
   - Built dedicated fullscreen POS Terminal (`/pos`) with auto-focused barcode input, keyboard shortcuts (`F2`/`Esc`), Zustand cart store, payment & exact cash controls, thermal receipt modal, and `/sales` history & void page.
+- **2026-11-20 (Phase 6 — Financial Management)**:
+  - Implemented `CashManagement` module (`cash_registers`, `cash_register_sessions`, append-only `cash_register_movements`, `CashReconciliationService` with `bcmath`, `OpenCashRegisterAction`, `RecordCashMovementAction`, `CloseCashRegisterAction`, and `AdjustClosedSessionAction` per BR-011/BR-012) and verified **CS-08** (`PENDING_TRANSACTIONS_EXIST`).
+  - Implemented `Sales` Return, Refund & Exchange (`sale_returns`, `sale_return_items`, `CreateSaleReturnAction` with idempotency, resellable vs damaged stock return via `InventoryLedgerService`, and cash register refund deduction) and verified **CS-04** (`INVALID_REFUND_QUANTITY`).
+  - Implemented `Expense` module (`expense_categories`, `expenses`, private `local` disk receipt attachments, approve/reject workflow, and automatic `cash_expense` movement on linked open cash register sessions).
+  - Seeded default `CashRegister` (`REG-01`) and 5 `ExpenseCategory` records in `DatabaseSeeder`.
+  - Built frontend `/cash-management`, `/expenses`, and `/sales` Return & Refund UI (with `FormData` upload support in `apiFetch`).
+  - Hardened Phase 6 backend against `laravel-best-practices`: replaced client-extension upload handling with server-verified `$file->store(..., 'local')`, extracted `RefundSaleRequest` and `StoreExpenseRequest` with tenant/store-scoped `Rule::exists` & `Rule::unique`, enforced least-privilege view permissions on `CashRegisterController`, removed redundant `Schema::hasTable()` metadata queries from `CashReconciliationService`, and added deterministic `orderBy` tie-breakers + `Str::upper()`.
 
 ---
 
@@ -58,3 +65,5 @@ All notable changes to this project will be documented in this file following [K
 | `0.4.0` | `2026-11-19` | Phase 3 | AI Agent | Recorded Phase 3 — Inventory Management completion (ledger, locking, MAC, adjustments, transfers, opname, CS-01/CS-07, frontend UI). |
 | `0.5.0` | `2026-11-19` | Phase 4 | AI Agent | Recorded Phase 4 — Purchasing Management completion (PO, GRN, Invoices, Payments, Returns, tests, frontend UI). |
 | `0.6.0` | `2026-11-19` | Phase 5 | AI Agent | Recorded Phase 5 — Point of Sales Core completion (Payment, Sales, POS, CS-02/03/05/09/10 tests, fullscreen POS Terminal & `/sales`). |
+| `0.7.0` | `2026-11-20` | Phase 6 | AI Agent | Recorded Phase 6 — Financial Management completion (`CashManagement`, `Sales` Returns/Refunds, `Expense`, CS-04/CS-08 tests, and frontend UI). |
+| `0.7.1` | `2026-11-20` | Phase 6 | AI Agent | Logged `laravel-best-practices` hardening refinements (FormRequests, scoped Rule::exists/unique, safe upload storage, CashRegister view guards, deterministic ordering). |

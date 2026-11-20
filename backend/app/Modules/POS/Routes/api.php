@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\POS\Http\Controllers\PosTransactionController;
+use App\Modules\Sales\Http\Controllers\SaleController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('api/v1/pos')
@@ -21,5 +22,8 @@ Route::prefix('api/v1/pos')
         Route::post('/transactions/{sale}/complete', [PosTransactionController::class, 'complete'])
             ->middleware('idempotent')
             ->name('api.v1.pos.transactions.complete');
+        Route::post('/transactions/{sale}/refund', [SaleController::class, 'refund'])
+            ->middleware('idempotent')
+            ->name('api.v1.pos.transactions.refund');
         Route::get('/transactions/{sale}/receipt', [PosTransactionController::class, 'receipt'])->name('api.v1.pos.transactions.receipt');
     });

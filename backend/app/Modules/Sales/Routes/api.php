@@ -9,7 +9,11 @@ Route::prefix('api/v1/sales')
     ->middleware(['api', 'auth:sanctum'])
     ->group(function (): void {
         Route::get('/', [SaleController::class, 'index'])->name('api.v1.sales.index');
+        Route::get('/returns', [SaleController::class, 'returns'])->name('api.v1.sales.returns.index');
         Route::get('/{sale}', [SaleController::class, 'show'])->name('api.v1.sales.show');
         Route::get('/{sale}/receipt', [SaleController::class, 'receipt'])->name('api.v1.sales.receipt');
         Route::post('/{sale}/void', [SaleController::class, 'void'])->name('api.v1.sales.void');
+        Route::post('/{sale}/refund', [SaleController::class, 'refund'])
+            ->middleware('idempotent')
+            ->name('api.v1.sales.refund');
     });

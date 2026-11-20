@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use App\Modules\AuditLog\AuditLogServiceProvider;
 use App\Modules\Brand\BrandServiceProvider;
+use App\Modules\CashManagement\CashManagementServiceProvider;
 use App\Modules\Category\CategoryServiceProvider;
 use App\Modules\Core\CoreServiceProvider;
 use App\Modules\Customer\CustomerServiceProvider;
+use App\Modules\Expense\ExpenseServiceProvider;
 use App\Modules\IAM\IAMServiceProvider;
 use App\Modules\Inventory\InventoryServiceProvider;
 use App\Modules\Organization\OrganizationServiceProvider;
@@ -48,4 +50,6 @@ return [
     PaymentServiceProvider::class,
     SalesServiceProvider::class,
     POSServiceProvider::class,
+    CashManagementServiceProvider::class,
+    ExpenseServiceProvider::class,
 ];

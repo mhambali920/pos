@@ -3,9 +3,9 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-013` |
-| **Version** | `1.0.0` |
+| **Version** | `1.6.0` |
 | **Status** | `Active` |
-| **Last Updated** | `2026-11-19` |
+| **Last Updated** | `2026-11-20` |
 | **Author** | Project Lead (AI Agent) |
 
 ---
@@ -20,7 +20,7 @@
 | **Phase 3** | Inventory Management | `Completed` | `100%` | `2026-11-19` | `2026-11-19` | Ledger `stock_movements`, `SELECT ... FOR UPDATE`, MAC valuation, opname, reconciliation, adjustments, transfers (CS-01 & CS-07) + Frontend `/inventory`. |
 | **Phase 4** | Purchasing Management | `Completed` | `100%` | `2026-11-19` | `2026-11-19` | PO (+approval), GRN (partial/full/damaged → Stock In + MAC), Invoices, Payments (+overpayment guard), Returns (+credit note) + Frontend `/purchasing`. |
 | **Phase 5** | Point of Sales (Core) | `Completed` | `100%` | `2026-11-19` | `2026-11-19` | Payment Gateway abstraction, Sales snapshots, Idempotent POS checkout, Split Payment, Hold/Resume, Thermal Receipt, CS-02/03/05/09/10 + Fullscreen `/pos` & `/sales`. |
-| **Phase 6** | Financial Management | `Not Started` | `0%` | — | — | Depends on Phase 5. |
+| **Phase 6** | Financial Management | `Completed` | `100%` | `2026-11-20` | `2026-11-20` | `CashManagement` (open/cash-in/cash-out/close/reconciliation/BR-012/CS-08), `Sales` Return & Refund (partial/full/damaged/CS-04), `Expense` (categories/attachments/approval) + Frontend `/cash-management`, `/expenses`, `/sales` refund. |
 | **Phase 7** | Advanced Features | `Not Started` | `0%` | — | — | Depends on Phase 6. |
 | **Phase 8** | Quality & Production | `Not Started` | `0%` | — | — | Final hardening & release. |
 
@@ -44,6 +44,8 @@
 | `2026-11-19` | Phase 4 | Implemented frontend `/purchasing` page (Orders, Goods Receipts, Invoices, Returns) | `eslint`, `tsc --noEmit`, `next build` passed | `Done` |
 | `2026-11-19` | Phase 5 | Implemented `Payment`, `Sales`, and `POS` modules (zero-trust pricing, idempotent checkout, split payment, thermal receipt, void) & CS-02/03/05/09/10 tests | Pint passed, PHPStan L7 0 errors, PHPUnit 25/25 passed (188 assertions) | `Done` |
 | `2026-11-19` | Phase 5 | Implemented dedicated fullscreen `/pos` terminal (barcode focus, shortcuts, cart, payment, thermal receipt) and `/sales` history page | `eslint`, `tsc --noEmit`, `next build` passed | `Done` |
+| `2026-11-20` | Phase 6 | Implemented `CashManagement`, `Sales` Return/Refund, and `Expense` backend modules with CS-04, CS-08 & BR-012 tests | Pint passed, PHPStan L7 0 errors, PHPUnit 30/30 passed (239 assertions) | `Done` |
+| `2026-11-20` | Phase 6 | Implemented frontend `/cash-management`, `/expenses`, and `/sales` Return & Refund workflow | `eslint`, `tsc --noEmit`, `next build` passed | `Done` |
 
 ---
 
@@ -58,3 +60,4 @@
 | `1.3.0` | `2026-11-19` | Phase 3 | AI Project Lead | Completed Phase 3 — Inventory Management (ledger, locking, MAC, adjustments, transfers, opname, CS-01 & CS-07 tests, frontend UI). |
 | `1.4.0` | `2026-11-19` | Phase 4 | AI Project Lead | Completed Phase 4 — Purchasing Management (PO, GRN, Invoices, Payments, Returns, lifecycle tests, frontend UI). |
 | `1.5.0` | `2026-11-19` | Phase 5 | AI Project Lead | Completed Phase 5 — Point of Sales Core (Payment, Sales, POS, CS-02/03/05/09/10 tests, fullscreen POS terminal & `/sales`). |
+| `1.6.0` | `2026-11-20` | Phase 6 | AI Project Lead | Completed Phase 6 — Financial Management (`CashManagement`, `Sales` Returns/Refunds, `Expense`, CS-04/CS-08 tests, and frontend UI). |

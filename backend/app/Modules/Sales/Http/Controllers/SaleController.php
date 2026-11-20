@@ -7,8 +7,11 @@ namespace App\Modules\Sales\Http\Controllers;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Modules\Core\Support\ApiResponse;
+use App\Modules\Sales\Actions\CreateSaleReturnAction;
 use App\Modules\Sales\Actions\VoidSaleAction;
+use App\Modules\Sales\Http\Requests\RefundSaleRequest;
 use App\Modules\Sales\Models\Sale;
+use App\Modules\Sales\Models\SaleReturn;
 use App\Modules\Sales\Services\ReceiptService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -23,7 +26,7 @@ class SaleController extends Controller
         }
 
         $query = Sale::query()
-            ->with(['store', 'customer', 'cashier', 'items', 'payments.method'])
+            ->with(['store', 'customer', 'cashier', 'items.returnItems', 'payments.method'])
             ->where('organization_id', $user->organization_id);
 
         if (! $user->can('stores.access_all')) {
@@ -54,7 +57,56 @@ class SaleController extends Controller
             return ApiResponse::error('Forbidden.', 'STORE_FORBIDDEN', 403);
         }
 
-        return ApiResponse::success($sale->load(['store', 'customer', 'cashier', 'items', 'payments.method']));
+        return ApiResponse::success($sale->load(['store', 'customer', 'cashier', 'items.returnItems', 'payments.method', 'returns.items']));
+    }
+
+    public function returns(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        if (! $user instanceof User || ! $user->can('sales.view')) {
+            return ApiResponse::error('Forbidden.', 'FORBIDDEN', 403);
+        }
+
+        $query = SaleReturn::query()
+            ->with(['sale', 'store', 'refundMethod', 'creator', 'items.saleItem'])
+            ->where('organization_id', $user->organization_id);
+
+        if (! $user->can('stores.access_all')) {
+            $assignedIds = $user->stores()->pluck('stores.id');
+            $query->whereIn('store_id', $assignedIds);
+        }
+
+        $paginator = $query->orderByDesc('created_at')->orderByDesc('id')->paginate(20);
+
+        return ApiResponse::success($paginator->items(), 'Sale returns retrieved.', 200, [
+            'pagination' => [
+                'current_page' => $paginator->currentPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'last_page' => $paginator->lastPage(),
+            ],
+        ]);
+    }
+
+    public function refund(RefundSaleRequest $request, Sale $sale, CreateSaleReturnAction $action): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->user();
+
+        /** @var array{
+         *     reason: string,
+         *     type?: string,
+         *     refund_method_id?: int|null,
+         *     cash_register_session_id?: int|null,
+         *     exchange_sale_id?: int|null,
+         *     items: list<array{sale_item_id: int, quantity: numeric-string, condition?: string}>
+         * } $validated
+         */
+        $validated = $request->validated();
+
+        $saleReturn = $action->execute($sale, $validated, $user->id);
+
+        return ApiResponse::success($saleReturn, 'Sale return processed successfully.', 201);
     }
 
     public function receipt(Request $request, Sale $sale, ReceiptService $receiptService): JsonResponse

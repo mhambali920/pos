@@ -7,6 +7,7 @@ namespace App\Modules\Sales\Models;
 use App\Modules\Product\Models\ProductVariant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
 
 /**
@@ -79,5 +80,13 @@ class SaleItem extends Model
     public function variant(): BelongsTo
     {
         return $this->belongsTo(ProductVariant::class, 'product_variant_id');
+    }
+
+    /**
+     * @return HasMany<SaleReturnItem, $this>
+     */
+    public function returnItems(): HasMany
+    {
+        return $this->hasMany(SaleReturnItem::class, 'sale_item_id');
     }
 }
