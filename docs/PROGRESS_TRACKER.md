@@ -3,9 +3,9 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-013` |
-| **Version** | `1.8.0` |
+| **Version** | `1.9.0` |
 | **Status** | `Completed` |
-| **Last Updated** | `2026-11-20` |
+| **Last Updated** | `2026-11-26` |
 | **Author** | Project Lead (AI Agent) |
 
 ---
@@ -49,6 +49,7 @@
 | `2026-11-20` | Phase 7 | Implemented `Promotion`, `Customer` Loyalty, `Notification`, `Analytics` Dashboards, and `FinancialReporting` + Async Export Job & tests | Pint passed, PHPStan L7 0 errors, PHPUnit 32/32 passed | `Done` |
 | `2026-11-20` | Phase 7 | Implemented frontend Analytics Dashboard (`/`), Topbar Notifications bell, and `/reports` (P&L, Sales, Inventory, Purchasing, Promotions, Exports) | `eslint`, `tsc --noEmit`, `next build` passed | `Done` |
 | `2026-11-20` | Phase 8 | Added `AttachSecurityHeaders`, `api`/`exports` rate limiters, `ProductionReadinessTest` (health, security headers, OpenAPI 3.1), and `docs/DEPLOYMENT_AND_RUNBOOK.md` | Pint passed, PHPStan L7 0 errors, PHPUnit 35/35 passed, Frontend build passed | `Done` |
+| `2026-11-26` | UI Redesign | Migrated 100% of Dashboard & POS Terminal UI to `@eta-ui/react@0.5.0`, removed 27 legacy `shadcn`/`@base-ui` files, and uninstalled 10 unused UI dependencies | `eslint` (0 errors), `tsc --noEmit` (0 errors), `next build` passed | `Done` |
 
 ---
 
@@ -66,3 +67,4 @@
 | `1.6.0` | `2026-11-20` | Phase 6 | AI Project Lead | Completed Phase 6 — Financial Management (`CashManagement`, `Sales` Returns/Refunds, `Expense`, CS-04/CS-08 tests, and frontend UI). |
 | `1.7.0` | `2026-11-20` | Phase 7 | AI Project Lead | Completed Phase 7 — Advanced Features (`Promotion`, Loyalty, `Notification`, `Analytics`, `FinancialReporting` + async export, and frontend UI). |
 | `1.8.0` | `2026-11-20` | Phase 8 | AI Project Lead | Completed Phase 8 — Quality & Production Readiness (all 8 phases 100% complete). |
+| `1.9.0` | `2026-11-26` | UI Redesign | AI Frontend Architect | Completed full frontend UI redesign to `@eta-ui/react@0.5.0` and legacy UI dependency cleanup. |

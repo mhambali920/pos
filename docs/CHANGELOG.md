@@ -3,9 +3,9 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-011` |
-| **Version** | `1.0.1` |
+| **Version** | `1.1.0` |
 | **Status** | `Release Ready` |
-| **Last Updated** | `2026-11-20` |
+| **Last Updated** | `2026-11-26` |
 | **Author** | Engineering Team (AI Agent) |
 
 All notable changes to this project will be documented in this file following [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and Semantic Versioning.
@@ -67,6 +67,10 @@ All notable changes to this project will be documented in this file following [K
   - Migrated `DashboardShell`, `SidebarNav`, and `Topbar` to official collapsible `shadcn/ui` `Sidebar` + `SidebarProvider` + `SidebarInset` + `Popover` notifications + `Select` store switcher.
   - Completed full Create/Edit/Delete & action workflows on `/products`, `/customers` (+ loyalty adjust), `/suppliers`, `/users` (+ activate/deactivate & reset password), `/roles` (+ permission sync), `/settings` (+ store CRUD & preferences), `/inventory` (+ adjustment & transfer drafts), and `/purchasing` (+ PO creation with `DatePicker`).
   - Replaced all native `<input type="date">` and `<select>` across dashboard pages with shadcn `DatePicker` and `Select`.
+- **2026-11-26 (Full UI Redesign — `@eta-ui/react@0.5.0`)**:
+  - Installed `@eta-ui/react@^0.5.0` and configured Tailwind CSS v4 Cascade Layers (`@eta-ui/react/styles.layer.css`), `--color-eta-*` tokens, SSR `<ThemeScript />`, `ThemeProvider`, `ToastProvider`, `TooltipProvider`, and `IsoDatePicker`.
+  - Migrated 100% of Auth (`/login`), Backoffice Shell (`DashboardShell`, `SidebarNav`, `Topbar`), Analytics Dashboard (`/` with `StatGroup` & `BarChart`), all 14 dashboard modules, `ProductForm`, and Fullscreen POS Terminal (`/pos` + modular `pos-customer-drawer`, `pos-held-drawer`, `pos-receipt-dialog`) to `@eta-ui/react`.
+  - Removed all 27 legacy UI files (`src/components/ui/*`, `src/hooks/use-mobile.ts`, `components.json`) and uninstalled 10 unused UI dependencies (`@base-ui/react`, `class-variance-authority`, `cn`, `date-fns`, `next-themes`, `react-day-picker`, `recharts`, `shadcn`, `sonner`, `tw-animate-css`).
 
 ---
 
@@ -87,3 +91,4 @@ All notable changes to this project will be documented in this file following [K
 | `0.8.0` | `2026-11-20` | Phase 7 | AI Agent | Recorded Phase 7 — Advanced Features completion (`Promotion`, Loyalty, `Notification`, `Analytics`, `FinancialReporting`, async exports, and frontend UI). |
 | `1.0.0` | `2026-11-20` | Phase 8 | AI Agent | Recorded Phase 8 — Quality & Production Readiness completion (security headers, rate limiters, OpenAPI 3.1 test, deployment & backup runbook). |
 | `1.0.1` | `2026-11-20` | Phase 8 | AI Agent | Logged official `shadcn/ui` CLI migration (including `Sidebar` & `DatePicker`) and complete frontend CRUD forms across all backoffice pages. |
+| `1.1.0` | `2026-11-26` | UI Redesign | AI Frontend Architect | Logged full Dashboard & POS UI redesign to `@eta-ui/react@0.5.0` and removal of all unused legacy UI dependencies. |

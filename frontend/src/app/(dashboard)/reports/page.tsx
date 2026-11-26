@@ -2,28 +2,48 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Download, Plus, Tag } from "lucide-react";
-import { toast } from "sonner";
-import { apiFetch, ApiError } from "@/lib/api";
-import type { PromotionItem, ReportExportItem, ReportPayload } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DatePicker } from "@/components/ui/date-picker";
+import { BarChart3, Download, FileSpreadsheet, Plus, Tag } from "lucide-react";
 import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Checkbox,
+  EmptyState,
+  FormField,
+  Heading,
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+  Skeleton,
+  Stat,
+  StatGroup,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Text,
+  useToast,
+} from "@eta-ui/react";
+import { IsoDatePicker } from "@/components/shared/iso-date-picker";
+import { apiFetch, ApiError } from "@/lib/api";
+import type { PromotionItem, ReportExportItem, ReportPayload } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
 type TabType = "sales" | "inventory" | "purchasing" | "financial" | "promotions" | "exports";
 
 export default function ReportsPage() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<TabType>("financial");
   const [dateFrom, setDateFrom] = useState("");
@@ -108,57 +128,57 @@ export default function ReportsPage() {
   });
 
   const report = reportQuery.data?.data;
+  const promotions = promotionsQuery.data?.data ?? [];
+  const exportsList = exportsQuery.data?.data ?? [];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Reports, Promotions & Exports</h1>
-          <p className="text-sm text-muted-foreground">
+          <Heading as="h1" size="xl" weight="semibold">
+            Reports, Promotions &amp; Exports
+          </Heading>
+          <Text size="sm" variant="muted" className="mt-0.5">
             Sales, inventory valuation, purchasing, P&amp;L financial statements, promotions, and async exports.
-          </p>
+          </Text>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <DatePicker
+          <IsoDatePicker
             value={dateFrom}
             onChange={setDateFrom}
             placeholder="Start date"
             allowClear
-            className="h-9 w-40 text-xs"
+            size="sm"
+            className="w-40"
           />
-          <DatePicker
+          <IsoDatePicker
             value={dateTo}
             onChange={setDateTo}
             placeholder="End date"
             allowClear
-            className="h-9 w-40 text-xs"
+            size="sm"
+            className="w-40"
           />
         </div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap gap-1.5">
-          {(
-            [
-              ["financial", "Financial (P&L)"],
-              ["sales", "Sales"],
-              ["inventory", "Inventory"],
-              ["purchasing", "Purchasing"],
-              ["promotions", "Promotions"],
-              ["exports", "Async Exports"],
-            ] as const
-          ).map(([key, label]) => (
-            <Button
-              key={key}
-              size="sm"
-              variant={activeTab === key ? "default" : "outline"}
-              onClick={() => setActiveTab(key)}
-            >
-              {label}
-            </Button>
-          ))}
-        </div>
+        <Tabs
+          variant="underline"
+          size="sm"
+          value={activeTab}
+          onValueChange={(v) => setActiveTab(v as TabType)}
+        >
+          <TabsList>
+            <TabsTrigger value="financial">Financial (P&amp;L)</TabsTrigger>
+            <TabsTrigger value="sales">Sales</TabsTrigger>
+            <TabsTrigger value="inventory">Inventory</TabsTrigger>
+            <TabsTrigger value="purchasing">Purchasing</TabsTrigger>
+            <TabsTrigger value="promotions">Promotions</TabsTrigger>
+            <TabsTrigger value="exports">Async Exports</TabsTrigger>
+          </TabsList>
+        </Tabs>
 
         {isReportTab && (
           <div className="flex items-center gap-1.5">
@@ -167,10 +187,11 @@ export default function ReportsPage() {
                 key={fmt}
                 size="sm"
                 variant="outline"
+                leftIcon={<Download className="h-3.5 w-3.5" />}
                 disabled={exportMutation.isPending}
                 onClick={() => exportMutation.mutate(fmt)}
               >
-                <Download className="h-3.5 w-3.5" /> {fmt.toUpperCase()}
+                {fmt.toUpperCase()}
               </Button>
             ))}
           </div>
@@ -180,184 +201,245 @@ export default function ReportsPage() {
       {isReportTab && (
         <div className="space-y-4">
           {report && (
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <StatGroup className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {Object.entries(report.summary).map(([key, val]) => (
-                <Card key={key}>
-                  <CardContent className="pt-4">
-                    <div className="text-xs uppercase tracking-wide text-muted-foreground">
-                      {key.replaceAll("_", " ")}
-                    </div>
-                    <div className="mt-1 text-xl font-bold font-mono">
+                <Stat
+                  key={key}
+                  variant="surface"
+                  label={key.replaceAll("_", " ")}
+                  value={
+                    <span className="font-mono text-xl font-bold">
                       {typeof val === "string" && val.includes(".")
                         ? formatCurrency(val)
                         : String(val)}
-                    </div>
-                  </CardContent>
-                </Card>
+                    </span>
+                  }
+                />
               ))}
-            </div>
+            </StatGroup>
           )}
 
-          <Card>
-            <CardHeader>
+          <Card variant="elevated" padding="none">
+            <CardHeader className="px-6 pt-5 pb-3">
               <CardTitle className="capitalize">{activeTab} Report Details</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardBody>
               {reportQuery.isLoading ? (
-                <div className="h-28 animate-pulse rounded-md bg-muted" />
-              ) : !report || report.rows.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No records for this period.</p>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="border-b border-border text-muted-foreground">
-                      <tr>
-                        {Object.keys(report.rows[0]).map((col) => (
-                          <th key={col} className="py-2 pr-4 font-medium capitalize">
-                            {col.replaceAll("_", " ")}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {report.rows.map((row, idx) => (
-                        <tr key={idx}>
-                          {Object.values(row).map((cell, cIdx) => (
-                            <td key={cIdx} className="py-2 pr-4 font-mono">
-                              {String(cell)}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+                <div className="space-y-2 p-6 pt-0">
+                  {[1, 2, 3].map((n) => (
+                    <Skeleton key={n} variant="rounded" height={44} />
+                  ))}
                 </div>
+              ) : !report || report.rows.length === 0 ? (
+                <div className="p-6 pt-0">
+                  <EmptyState
+                    variant="bordered"
+                    icon={<BarChart3 className="h-6 w-6" />}
+                    title="No records for this period"
+                    description="Adjust the date filters to view report details."
+                  />
+                </div>
+              ) : (
+                <Table variant="hoverable" size="sm">
+                  <TableHeader>
+                    <TableRow>
+                      {Object.keys(report.rows[0]).map((col) => (
+                        <TableHead key={col} className="capitalize">
+                          {col.replaceAll("_", " ")}
+                        </TableHead>
+                      ))}
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {report.rows.map((row, idx) => (
+                      <TableRow key={idx}>
+                        {Object.values(row).map((cell, cIdx) => (
+                          <TableCell key={cIdx} className="font-mono text-xs">
+                            {String(cell)}
+                          </TableCell>
+                        ))}
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
-            </CardContent>
+            </CardBody>
           </Card>
         </div>
       )}
 
       {activeTab === "promotions" && (
         <div className="space-y-4">
-          <Card>
+          <Card variant="elevated">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Tag className="h-4 w-4" /> Create Promotion
               </CardTitle>
             </CardHeader>
-            <CardContent className="grid gap-3 sm:grid-cols-5">
-              <Input
-                placeholder="Code (e.g. WEEKEND10)"
-                value={promoCode}
-                onChange={(e) => setPromoCode(e.target.value)}
-              />
-              <Input
-                placeholder="Promotion Name"
-                value={promoName}
-                onChange={(e) => setPromoName(e.target.value)}
-              />
-              <Select value={promoType} onValueChange={(v) => setPromoType(v ?? "percentage")}>
-                <SelectTrigger className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="percentage">Percentage (%)</SelectItem>
-                  <SelectItem value="fixed_amount">Fixed Amount</SelectItem>
-                  <SelectItem value="coupon">Coupon</SelectItem>
-                  <SelectItem value="bogo">BOGO</SelectItem>
-                  <SelectItem value="buy_x_get_y">Buy X Get Y</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input
-                type="number"
-                placeholder="Value"
-                value={promoValue}
-                onChange={(e) => setPromoValue(e.target.value)}
-              />
-              <Button
-                disabled={createPromoMutation.isPending || !promoCode || !promoName}
-                onClick={() => createPromoMutation.mutate()}
-              >
-                <Plus className="h-4 w-4" /> Create
-              </Button>
-              <label className="sm:col-span-5 flex items-center gap-2 text-xs cursor-pointer">
+            <CardBody className="grid gap-3 sm:grid-cols-5">
+              <FormField label="Code" isRequired>
+                <Input
+                  placeholder="Code (e.g. WEEKEND10)"
+                  value={promoCode}
+                  onChange={(e) => setPromoCode(e.target.value)}
+                />
+              </FormField>
+              <FormField label="Promotion Name" isRequired>
+                <Input
+                  placeholder="Promotion Name"
+                  value={promoName}
+                  onChange={(e) => setPromoName(e.target.value)}
+                />
+              </FormField>
+              <FormField label="Type">
+                <Select value={promoType} onValueChange={(v) => setPromoType(v ?? "percentage")}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="percentage">Percentage (%)</SelectItem>
+                    <SelectItem value="fixed_amount">Fixed Amount</SelectItem>
+                    <SelectItem value="coupon">Coupon</SelectItem>
+                    <SelectItem value="bogo">BOGO</SelectItem>
+                    <SelectItem value="buy_x_get_y">Buy X Get Y</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormField>
+              <FormField label="Value">
+                <Input
+                  type="number"
+                  placeholder="Value"
+                  value={promoValue}
+                  onChange={(e) => setPromoValue(e.target.value)}
+                />
+              </FormField>
+              <div className="flex items-end">
+                <Button
+                  className="w-full"
+                  variant="solid"
+                  color="primary"
+                  leftIcon={<Plus className="h-4 w-4" />}
+                  isLoading={createPromoMutation.isPending}
+                  disabled={createPromoMutation.isPending || !promoCode || !promoName}
+                  onClick={() => createPromoMutation.mutate()}
+                >
+                  Create
+                </Button>
+              </div>
+              <div className="sm:col-span-5">
                 <Checkbox
+                  label="Allow stacking with lower-priority promotions"
                   checked={promoStackable}
                   onCheckedChange={(v) => setPromoStackable(Boolean(v))}
                 />
-                Allow stacking with lower-priority promotions
-              </label>
-            </CardContent>
+              </div>
+            </CardBody>
           </Card>
 
-          <Card>
-            <CardHeader>
+          <Card variant="elevated" padding="none">
+            <CardHeader className="px-6 pt-5 pb-3">
               <CardTitle>Active Promotions</CardTitle>
             </CardHeader>
-            <CardContent>
-              {(promotionsQuery.data?.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No promotions configured yet.</p>
-              ) : (
-                <div className="divide-y divide-border">
-                  {(promotionsQuery.data?.data ?? []).map((p) => (
-                    <div
-                      key={p.id}
-                      className="flex flex-col gap-1 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between"
-                    >
-                      <div>
-                        <span className="font-mono text-xs font-semibold">{p.code}</span> —{" "}
-                        {p.name}
-                      </div>
-                      <div className="flex items-center gap-2 text-xs">
-                        <Badge variant="muted">{p.type}</Badge>
-                        <Badge variant={p.is_stackable ? "success" : "warning"}>
-                          {p.is_stackable ? "Stackable" : "Exclusive"}
-                        </Badge>
-                        <span className="font-mono text-muted-foreground">
-                          Priority {p.priority}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
+            <CardBody>
+              {promotions.length === 0 ? (
+                <div className="p-6 pt-0">
+                  <EmptyState
+                    variant="bordered"
+                    icon={<Tag className="h-6 w-6" />}
+                    title="No promotions configured yet"
+                    description="Create a discount or coupon rule above."
+                  />
                 </div>
+              ) : (
+                <Table variant="hoverable" size="sm">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Code</TableHead>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Stacking</TableHead>
+                      <TableHead align="right">Priority</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {promotions.map((p) => (
+                      <TableRow key={p.id}>
+                        <TableCell className="font-mono text-xs font-semibold">{p.code}</TableCell>
+                        <TableCell className="text-sm">{p.name}</TableCell>
+                        <TableCell>
+                          <Badge variant="soft" color="neutral">
+                            {p.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="soft" color={p.is_stackable ? "success" : "warning"}>
+                            {p.is_stackable ? "Stackable" : "Exclusive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell align="right" className="font-mono text-xs text-eta-muted">
+                          {p.priority}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               )}
-            </CardContent>
+            </CardBody>
           </Card>
         </div>
       )}
 
       {activeTab === "exports" && (
-        <Card>
-          <CardHeader>
+        <Card variant="elevated" padding="none">
+          <CardHeader className="px-6 pt-5 pb-3">
             <CardTitle>Async Export History</CardTitle>
           </CardHeader>
-          <CardContent>
-            {(exportsQuery.data?.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No exports queued yet.</p>
-            ) : (
-              <div className="divide-y divide-border">
-                {(exportsQuery.data?.data ?? []).map((exp) => (
-                  <div
-                    key={exp.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-medium capitalize">
-                        {exp.report_type} Report ({exp.format.toUpperCase()})
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Requested {new Date(exp.created_at).toLocaleString()}
-                      </div>
-                    </div>
-                    <Badge variant={exp.status === "completed" ? "success" : "warning"}>
-                      {exp.status}
-                    </Badge>
-                  </div>
-                ))}
+          <CardBody>
+            {exportsList.length === 0 ? (
+              <div className="p-6 pt-0">
+                <EmptyState
+                  variant="bordered"
+                  icon={<FileSpreadsheet className="h-6 w-6" />}
+                  title="No exports queued yet"
+                  description="Trigger a CSV, Excel, or PDF export from any report tab."
+                />
               </div>
+            ) : (
+              <Table variant="hoverable" size="sm">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Report</TableHead>
+                    <TableHead>Format</TableHead>
+                    <TableHead>Requested At</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {exportsList.map((exp) => (
+                    <TableRow key={exp.id}>
+                      <TableCell className="font-medium capitalize">
+                        {exp.report_type} Report
+                      </TableCell>
+                      <TableCell className="font-mono text-xs uppercase">
+                        {exp.format}
+                      </TableCell>
+                      <TableCell className="text-xs text-eta-muted">
+                        {new Date(exp.created_at).toLocaleString()}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="soft"
+                          color={exp.status === "completed" ? "success" : "warning"}
+                        >
+                          {exp.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
-          </CardContent>
+          </CardBody>
         </Card>
       )}
     </div>

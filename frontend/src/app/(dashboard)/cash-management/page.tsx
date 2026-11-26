@@ -3,7 +3,36 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDownCircle, ArrowUpCircle, Lock, Unlock, Wallet } from "lucide-react";
-import { toast } from "sonner";
+import {
+  Alert,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Divider,
+  EmptyState,
+  FormField,
+  Heading,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Stat,
+  StatGroup,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Text,
+  useToast,
+} from "@eta-ui/react";
 import { apiFetch, ApiError } from "@/lib/api";
 import type {
   CashRegister,
@@ -11,20 +40,9 @@ import type {
   CurrentRegisterPayload,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export default function CashManagementPage() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const [selectedRegisterId, setSelectedRegisterId] = useState("");
@@ -121,90 +139,118 @@ export default function CashManagementPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Cash Management</h1>
-        <p className="text-sm text-muted-foreground">
+        <Heading as="h1" size="xl" weight="semibold">
+          Cash Management
+        </Heading>
+        <Text size="sm" variant="muted" className="mt-0.5">
           Manage cashier register shifts, cash in/out movements, and end-of-shift reconciliation.
-        </p>
+        </Text>
       </div>
 
       {currentQuery.isLoading ? (
-        <div className="h-44 animate-pulse rounded-xl bg-muted" />
+        <Skeleton variant="rounded" height={176} />
       ) : current ? (
         <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
+          <Card variant="elevated" className="lg:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Unlock className="h-4 w-4 text-emerald-600" />
-                  Active Session — {current.session.register?.name ?? `Register #${current.session.cash_register_id}`}
+                  <Unlock className="h-4 w-4 text-eta-success" />
+                  Active Session —{" "}
+                  {current.session.register?.name ?? `Register #${current.session.cash_register_id}`}
                 </CardTitle>
-                <p className="text-xs text-muted-foreground mt-1">
+                <Text size="xs" variant="muted" className="mt-1">
                   Cashier: {current.session.user?.name ?? "Current User"} • Opened{" "}
                   {new Date(current.session.opened_at).toLocaleString()}
-                </p>
+                </Text>
               </div>
-              <Badge variant="success">OPEN</Badge>
+              <Badge variant="soft" color="success">
+                OPEN
+              </Badge>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-lg border border-border p-3">
-                  <div className="text-xs text-muted-foreground">Opening Balance</div>
-                  <div className="mt-1 text-lg font-semibold font-mono">
-                    {formatCurrency(current.summary.opening_balance)}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <div className="text-xs text-muted-foreground">Cash Sales</div>
-                  <div className="mt-1 text-lg font-semibold font-mono text-emerald-600">
-                    +{formatCurrency(current.summary.cash_sales)}
-                  </div>
-                </div>
-                <div className="rounded-lg border border-border bg-primary/5 p-3">
-                  <div className="text-xs text-muted-foreground">Expected Cash</div>
-                  <div className="mt-1 text-lg font-bold font-mono">
-                    {formatCurrency(current.summary.expected_cash)}
-                  </div>
-                </div>
-              </div>
+            <CardBody className="space-y-4">
+              <StatGroup className="grid gap-3 sm:grid-cols-3">
+                <Stat
+                  variant="surface"
+                  label="Opening Balance"
+                  value={
+                    <span className="font-mono text-lg">
+                      {formatCurrency(current.summary.opening_balance)}
+                    </span>
+                  }
+                />
+                <Stat
+                  variant="surface"
+                  label="Cash Sales"
+                  value={
+                    <span className="font-mono text-lg text-eta-success">
+                      +{formatCurrency(current.summary.cash_sales)}
+                    </span>
+                  }
+                />
+                <Stat
+                  variant="surface"
+                  label="Expected Cash"
+                  value={
+                    <span className="font-mono text-lg font-bold">
+                      {formatCurrency(current.summary.expected_cash)}
+                    </span>
+                  }
+                />
+              </StatGroup>
 
               <div className="grid gap-2 text-xs sm:grid-cols-4">
-                <div className="rounded-md bg-muted/60 p-2.5">
-                  <span className="text-muted-foreground">Cash In:</span>{" "}
-                  <span className="font-mono font-medium">+{formatCurrency(current.summary.cash_in)}</span>
+                <div className="rounded-md bg-eta-subtle p-2.5">
+                  <span className="text-eta-muted">Cash In:</span>{" "}
+                  <span className="font-mono font-medium">
+                    +{formatCurrency(current.summary.cash_in)}
+                  </span>
                 </div>
-                <div className="rounded-md bg-muted/60 p-2.5">
-                  <span className="text-muted-foreground">Cash Out:</span>{" "}
-                  <span className="font-mono font-medium">-{formatCurrency(current.summary.cash_out)}</span>
+                <div className="rounded-md bg-eta-subtle p-2.5">
+                  <span className="text-eta-muted">Cash Out:</span>{" "}
+                  <span className="font-mono font-medium">
+                    -{formatCurrency(current.summary.cash_out)}
+                  </span>
                 </div>
-                <div className="rounded-md bg-muted/60 p-2.5">
-                  <span className="text-muted-foreground">Cash Refunds:</span>{" "}
-                  <span className="font-mono font-medium">-{formatCurrency(current.summary.cash_refund)}</span>
+                <div className="rounded-md bg-eta-subtle p-2.5">
+                  <span className="text-eta-muted">Cash Refunds:</span>{" "}
+                  <span className="font-mono font-medium">
+                    -{formatCurrency(current.summary.cash_refund)}
+                  </span>
                 </div>
-                <div className="rounded-md bg-muted/60 p-2.5">
-                  <span className="text-muted-foreground">Cash Expenses:</span>{" "}
-                  <span className="font-mono font-medium">-{formatCurrency(current.summary.cash_expense)}</span>
+                <div className="rounded-md bg-eta-subtle p-2.5">
+                  <span className="text-eta-muted">Cash Expenses:</span>{" "}
+                  <span className="font-mono font-medium">
+                    -{formatCurrency(current.summary.cash_expense)}
+                  </span>
                 </div>
               </div>
 
-              <div className="border-t border-border pt-4">
-                <h3 className="text-sm font-medium mb-3">Record Cash Movement</h3>
+              <Divider spacing="none" />
+
+              <div>
+                <h3 className="mb-3 text-sm font-medium text-eta-heading">Record Cash Movement</h3>
                 <div className="flex flex-col gap-3 sm:flex-row">
                   <div className="flex gap-1.5">
                     <Button
                       type="button"
                       size="sm"
-                      variant={movementType === "cash-in" ? "default" : "outline"}
+                      variant={movementType === "cash-in" ? "solid" : "outline"}
+                      color={movementType === "cash-in" ? "primary" : undefined}
+                      leftIcon={<ArrowDownCircle className="h-3.5 w-3.5" />}
                       onClick={() => setMovementType("cash-in")}
                     >
-                      <ArrowDownCircle className="h-3.5 w-3.5" /> Cash In
+                      Cash In
                     </Button>
                     <Button
                       type="button"
                       size="sm"
-                      variant={movementType === "cash-out" ? "default" : "outline"}
+                      variant={movementType === "cash-out" ? "solid" : "outline"}
+                      color={movementType === "cash-out" ? "primary" : undefined}
+                      leftIcon={<ArrowUpCircle className="h-3.5 w-3.5" />}
                       onClick={() => setMovementType("cash-out")}
                     >
-                      <ArrowUpCircle className="h-3.5 w-3.5" /> Cash Out
+                      Cash Out
                     </Button>
                   </div>
                   <Input
@@ -223,6 +269,9 @@ export default function CashManagementPage() {
                   />
                   <Button
                     type="button"
+                    variant="solid"
+                    color="primary"
+                    isLoading={movementMutation.isPending}
                     disabled={movementMutation.isPending || !movementAmount || !movementReason}
                     onClick={() => movementMutation.mutate()}
                   >
@@ -230,165 +279,179 @@ export default function CashManagementPage() {
                   </Button>
                 </div>
               </div>
-            </CardContent>
+            </CardBody>
           </Card>
 
-          <Card>
+          <Card variant="elevated">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Lock className="h-4 w-4" /> Close & Reconcile
+                <Lock className="h-4 w-4" /> Close &amp; Reconcile
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">
-                  Actual Cash Counted
-                </label>
+            <CardBody className="space-y-4">
+              <FormField label="Actual Cash Counted" isRequired>
                 <Input
                   type="number"
                   min="0"
                   placeholder="Enter counted drawer cash"
                   value={actualCash}
                   onChange={(e) => setActualCash(e.target.value)}
-                  className="mt-1 font-mono"
+                  className="font-mono"
                 />
-              </div>
+              </FormField>
 
               {liveDiff !== null && (
-                <div className="rounded-lg border border-border p-3 text-xs">
-                  <div className="text-muted-foreground">Estimated Variance</div>
-                  <div
-                    className={`mt-1 font-mono text-sm font-semibold ${
-                      liveDiff === 0
-                        ? "text-emerald-600"
-                        : liveDiff > 0
-                          ? "text-amber-600"
-                          : "text-destructive"
-                    }`}
-                  >
+                <Alert
+                  status={liveDiff === 0 ? "info" : "warning"}
+                  variant="soft"
+                  title="Estimated Variance"
+                >
+                  <span className="font-mono font-semibold">
                     {liveDiff > 0 ? "+" : ""}
                     {formatCurrency(liveDiff)} (
                     {liveDiff === 0 ? "Balanced" : liveDiff > 0 ? "Overage" : "Shortage"})
-                  </div>
-                </div>
+                  </span>
+                </Alert>
               )}
 
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Closing Notes</label>
+              <FormField label="Closing Notes">
                 <Input
                   placeholder="Optional shift notes"
                   value={closingNotes}
                   onChange={(e) => setClosingNotes(e.target.value)}
-                  className="mt-1"
                 />
-              </div>
+              </FormField>
 
               <Button
                 className="w-full"
-                variant="destructive"
+                variant="solid"
+                color="danger"
+                isLoading={closeMutation.isPending}
                 disabled={closeMutation.isPending || actualCash === ""}
                 onClick={() => closeMutation.mutate()}
               >
                 Close Register Session
               </Button>
-            </CardContent>
+            </CardBody>
           </Card>
         </div>
       ) : (
-        <Card>
+        <Card variant="elevated">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Wallet className="h-4 w-4" /> Open Cash Register Session
             </CardTitle>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-end">
-            <div className="flex-1 space-y-1.5">
-              <Label>Cash Register</Label>
-              <Select
-                value={selectedRegisterId || String(registers[0]?.id ?? "")}
-                onValueChange={(v) => setSelectedRegisterId(v ?? "")}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select cash register" />
-                </SelectTrigger>
-                <SelectContent>
-                  {registers.map((reg) => (
-                    <SelectItem key={reg.id} value={String(reg.id)}>
-                      {reg.code} — {reg.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+          <CardBody className="flex flex-col gap-3 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <FormField label="Cash Register">
+                <Select
+                  value={selectedRegisterId || String(registers[0]?.id ?? "")}
+                  onValueChange={(v) => setSelectedRegisterId(v ?? "")}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select cash register" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {registers.map((reg) => (
+                      <SelectItem key={reg.id} value={String(reg.id)}>
+                        {reg.code} — {reg.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
             </div>
             <div className="sm:w-52">
-              <label className="text-xs font-medium text-muted-foreground">Opening Balance</label>
-              <Input
-                type="number"
-                min="0"
-                value={openingBalance}
-                onChange={(e) => setOpeningBalance(e.target.value)}
-                className="mt-1 font-mono"
-              />
+              <FormField label="Opening Balance">
+                <Input
+                  type="number"
+                  min="0"
+                  value={openingBalance}
+                  onChange={(e) => setOpeningBalance(e.target.value)}
+                  className="font-mono"
+                />
+              </FormField>
             </div>
             <Button
+              variant="solid"
+              color="primary"
+              isLoading={openMutation.isPending}
               disabled={openMutation.isPending || registers.length === 0}
               onClick={() => openMutation.mutate()}
             >
               Open Register
             </Button>
-          </CardContent>
+          </CardBody>
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
+      <Card variant="elevated" padding="none">
+        <CardHeader className="px-6 pt-5 pb-3">
           <CardTitle>Session History</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardBody>
           {sessions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No cash register sessions yet.</p>
+            <div className="p-6 pt-0">
+              <EmptyState
+                variant="bordered"
+                icon={<Wallet className="h-6 w-6" />}
+                title="No cash register sessions yet"
+                description="Opened and closed cashier shift sessions will appear here."
+              />
+            </div>
           ) : (
-            <div className="divide-y divide-border">
-              {sessions.map((session) => {
-                const diff = session.cash_difference ? Number(session.cash_difference) : 0;
-                return (
-                  <div
-                    key={session.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-medium">
+            <Table variant="hoverable" size="sm">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Register &amp; Cashier</TableHead>
+                  <TableHead>Shift Time</TableHead>
+                  <TableHead align="right">Expected</TableHead>
+                  <TableHead align="right">Actual</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sessions.map((session) => {
+                  const diff = session.cash_difference ? Number(session.cash_difference) : 0;
+                  return (
+                    <TableRow key={session.id}>
+                      <TableCell className="text-sm font-medium">
                         {session.register?.name ?? `Register #${session.cash_register_id}`} •{" "}
                         {session.user?.name ?? "Cashier"}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
+                      </TableCell>
+                      <TableCell className="text-xs text-eta-muted">
                         Opened {new Date(session.opened_at).toLocaleString()}
                         {session.closed_at
                           ? ` • Closed ${new Date(session.closed_at).toLocaleString()}`
                           : ""}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-3 font-mono text-xs">
-                      <span>Expected: {formatCurrency(session.expected_cash)}</span>
-                      {session.actual_cash !== null && (
-                        <span>Actual: {formatCurrency(session.actual_cash)}</span>
-                      )}
-                      {session.status === "closed" ? (
-                        <Badge variant={diff === 0 ? "success" : "warning"}>
-                          {diff === 0
-                            ? "Balanced"
-                            : `${diff > 0 ? "+" : ""}${formatCurrency(diff)}`}
-                        </Badge>
-                      ) : (
-                        <Badge variant="success">OPEN</Badge>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                      </TableCell>
+                      <TableCell align="right" className="font-mono text-xs">
+                        {formatCurrency(session.expected_cash)}
+                      </TableCell>
+                      <TableCell align="right" className="font-mono text-xs">
+                        {session.actual_cash !== null ? formatCurrency(session.actual_cash) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {session.status === "closed" ? (
+                          <Badge variant="soft" color={diff === 0 ? "success" : "warning"}>
+                            {diff === 0
+                              ? "Balanced"
+                              : `${diff > 0 ? "+" : ""}${formatCurrency(diff)}`}
+                          </Badge>
+                        ) : (
+                          <Badge variant="soft" color="success">
+                            OPEN
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
           )}
-        </CardContent>
+        </CardBody>
       </Card>
     </div>
   );

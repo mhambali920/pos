@@ -5,10 +5,18 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Button,
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  FormField,
+  Input,
+  ThemeToggle,
+  useToast,
+} from "@eta-ui/react";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { AuthUser } from "@/lib/types";
 import { useAuthStore } from "@/stores/auth-store";
@@ -22,6 +30,7 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const setSession = useAuthStore((s) => s.setSession);
   const [submitting, setSubmitting] = useState(false);
 
@@ -60,56 +69,71 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+    <div className="relative flex min-h-screen items-center justify-center bg-eta-base p-4">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle variant="icon" size="sm" />
+      </div>
+
+      <Card variant="elevated" elevation="md" padding="lg" className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-primary text-primary-foreground text-sm font-bold">
+          <div className="mb-2 flex h-10 w-10 items-center justify-center rounded-lg bg-eta-primary text-sm font-bold text-eta-inverse">
             EP
           </div>
-          <CardTitle className="text-xl">Sign in to Enterprise POS</CardTitle>
+          <CardTitle as="h1" className="text-xl">
+            Sign in to Enterprise POS
+          </CardTitle>
           <CardDescription>
             Enter your account credentials to access your assigned outlet.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardBody>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div className="space-y-1.5">
-              <label htmlFor="email" className="text-sm font-medium">
-                Email
-              </label>
+            <FormField
+              id="email"
+              label="Email"
+              isRequired
+              isInvalid={Boolean(errors.email)}
+              errorMessage={errors.email?.message}
+            >
               <Input
                 id="email"
                 type="email"
                 autoComplete="email"
                 placeholder="admin@pos.local"
+                isInvalid={Boolean(errors.email)}
                 {...register("email")}
               />
-              {errors.email && (
-                <p className="text-xs text-red-600">{errors.email.message}</p>
-              )}
-            </div>
+            </FormField>
 
-            <div className="space-y-1.5">
-              <label htmlFor="password" className="text-sm font-medium">
-                Password
-              </label>
+            <FormField
+              id="password"
+              label="Password"
+              isRequired
+              isInvalid={Boolean(errors.password)}
+              errorMessage={errors.password?.message}
+            >
               <Input
                 id="password"
                 type="password"
                 autoComplete="current-password"
                 placeholder="••••••••"
+                isInvalid={Boolean(errors.password)}
                 {...register("password")}
               />
-              {errors.password && (
-                <p className="text-xs text-red-600">{errors.password.message}</p>
-              )}
-            </div>
+            </FormField>
 
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Signing in..." : "Sign In"}
+            <Button
+              type="submit"
+              variant="solid"
+              color="primary"
+              size="md"
+              isLoading={submitting}
+              className="w-full"
+            >
+              Sign In
             </Button>
           </form>
-        </CardContent>
+        </CardBody>
       </Card>
     </div>
   );

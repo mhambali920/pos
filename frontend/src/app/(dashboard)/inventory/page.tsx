@@ -3,7 +3,41 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeftRight, Plus, RefreshCw } from "lucide-react";
-import { toast } from "sonner";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  EmptyState,
+  FormField,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+  useToast,
+} from "@eta-ui/react";
 import { apiFetch, ApiError } from "@/lib/api";
 import type {
   ExpiredBatchAlert,
@@ -15,37 +49,9 @@ import type {
   WarehouseItem,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 
 export default function InventoryPage() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState("overview");
   const [lowStockOnly, setLowStockOnly] = useState(false);
@@ -151,7 +157,8 @@ export default function InventoryPage() {
       setAdjReason("");
       void queryClient.invalidateQueries({ queryKey: ["inventory-adjustments"] });
     },
-    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Failed to create adjustment."),
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Failed to create adjustment."),
   });
 
   const approveAdjustmentMutation = useMutation({
@@ -187,7 +194,8 @@ export default function InventoryPage() {
       setTrfNotes("");
       void queryClient.invalidateQueries({ queryKey: ["inventory-transfers"] });
     },
-    onError: (err) => toast.error(err instanceof ApiError ? err.message : "Transfer creation failed."),
+    onError: (err) =>
+      toast.error(err instanceof ApiError ? err.message : "Transfer creation failed."),
   });
 
   const transferActionMutation = useMutation({
@@ -205,8 +213,10 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Inventory Management</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-eta-heading">
+            Inventory Management
+          </h1>
+          <p className="text-sm text-eta-muted">
             Ledger-backed stock tracking, adjustments, inter-warehouse transfers, and reconciliation.
           </p>
         </div>
@@ -221,6 +231,7 @@ export default function InventoryPage() {
           <Button
             variant="outline"
             size="sm"
+            isLoading={reconcileMutation.isPending}
             disabled={reconcileMutation.isPending}
             onClick={() => reconcileMutation.mutate()}
           >
@@ -229,7 +240,7 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      <Tabs value={tab} onValueChange={setTab}>
+      <Tabs value={tab} onValueChange={setTab} variant="underline">
         <TabsList>
           <TabsTrigger value="overview">Stock Overview</TabsTrigger>
           <TabsTrigger value="movements">Movements Ledger</TabsTrigger>
@@ -242,22 +253,25 @@ export default function InventoryPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Current Stock Balances</CardTitle>
-              <div className="flex items-center gap-2">
-                <Label htmlFor="low-stock-toggle">Low stock only</Label>
-                <Switch
-                  id="low-stock-toggle"
-                  checked={lowStockOnly}
-                  onCheckedChange={setLowStockOnly}
-                />
-              </div>
+              <Switch
+                id="low-stock-toggle"
+                label="Low stock only"
+                checked={lowStockOnly}
+                onCheckedChange={setLowStockOnly}
+              />
             </CardHeader>
-            <CardContent>
+            <CardBody>
               {overviewQuery.isLoading ? (
-                <div className="h-24 animate-pulse rounded-md bg-muted" />
+                <Skeleton variant="rounded" height={96} />
               ) : (overviewQuery.data?.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No stock records found.</p>
+                <EmptyState
+                  variant="bordered"
+                  size="sm"
+                  title="No stock records found"
+                  description="Stock balances will appear here once inventory is added."
+                />
               ) : (
-                <Table>
+                <Table variant="hoverable">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Warehouse</TableHead>
@@ -273,21 +287,21 @@ export default function InventoryPage() {
                         <TableCell>{item.warehouse?.name ?? "—"}</TableCell>
                         <TableCell>
                           <div className="font-mono text-xs">{item.variant?.sku ?? "—"}</div>
-                          <div className="text-xs text-muted-foreground">
-                            {item.variant?.name ?? ""}
-                          </div>
+                          <div className="text-xs text-eta-muted">{item.variant?.name ?? ""}</div>
                         </TableCell>
                         <TableCell className="font-mono">{item.qty_on_hand}</TableCell>
                         <TableCell className="font-mono font-medium">
                           {item.qty_available}
                         </TableCell>
-                        <TableCell className="font-mono">{formatCurrency(item.unit_cost ?? "0")}</TableCell>
+                        <TableCell className="font-mono">
+                          {formatCurrency(item.unit_cost ?? "0")}
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
+            </CardBody>
           </Card>
         </TabsContent>
 
@@ -296,13 +310,18 @@ export default function InventoryPage() {
             <CardHeader>
               <CardTitle>Immutable Stock Movements Ledger</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardBody>
               {movementsQuery.isLoading ? (
-                <div className="h-24 animate-pulse rounded-md bg-muted" />
+                <Skeleton variant="rounded" height={96} />
               ) : (movementsQuery.data?.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No movements recorded yet.</p>
+                <EmptyState
+                  variant="bordered"
+                  size="sm"
+                  title="No movements recorded yet"
+                  description="Stock movements from sales, purchases, adjustments, and transfers will appear here."
+                />
               ) : (
-                <Table>
+                <Table variant="hoverable">
                   <TableHeader>
                     <TableRow>
                       <TableHead>Type</TableHead>
@@ -317,21 +336,21 @@ export default function InventoryPage() {
                     {(movementsQuery.data?.data ?? []).map((m) => (
                       <TableRow key={m.id}>
                         <TableCell>
-                          <Badge variant="muted">{m.movement_type}</Badge>
+                          <Badge variant="soft" color="neutral">
+                            {m.movement_type}
+                          </Badge>
                         </TableCell>
                         <TableCell className="font-mono text-xs">{m.variant?.sku ?? "—"}</TableCell>
                         <TableCell className="font-mono">{m.qty_before}</TableCell>
                         <TableCell className="font-mono font-semibold">{m.qty_change}</TableCell>
                         <TableCell className="font-mono">{m.qty_after}</TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {m.notes ?? "—"}
-                        </TableCell>
+                        <TableCell className="text-xs text-eta-muted">{m.notes ?? "—"}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               )}
-            </CardContent>
+            </CardBody>
           </Card>
         </TabsContent>
 
@@ -340,9 +359,14 @@ export default function InventoryPage() {
             <CardHeader>
               <CardTitle>Stock Adjustments</CardTitle>
             </CardHeader>
-            <CardContent className="divide-y divide-border">
+            <CardBody className="divide-y divide-eta-border">
               {(adjustmentsQuery.data?.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No stock adjustments yet.</p>
+                <EmptyState
+                  variant="bordered"
+                  size="sm"
+                  title="No stock adjustments yet"
+                  description="Create a stock adjustment draft to reconcile physical counts."
+                />
               ) : (
                 (adjustmentsQuery.data?.data ?? []).map((adj) => (
                   <div
@@ -351,16 +375,21 @@ export default function InventoryPage() {
                   >
                     <div>
                       <div className="font-mono text-xs font-semibold">{adj.adjustment_number}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-eta-muted">
                         {adj.warehouse?.name ?? "Warehouse"} • {adj.reason}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={adj.status === "approved" ? "success" : "warning"}>
+                      <Badge
+                        variant="soft"
+                        color={adj.status === "approved" ? "success" : "warning"}
+                      >
                         {adj.status}
                       </Badge>
                       {adj.status === "draft" && (
                         <Button
+                          variant="solid"
+                          color="primary"
                           size="sm"
                           onClick={() => approveAdjustmentMutation.mutate(adj.id)}
                         >
@@ -371,7 +400,7 @@ export default function InventoryPage() {
                   </div>
                 ))
               )}
-            </CardContent>
+            </CardBody>
           </Card>
         </TabsContent>
 
@@ -380,9 +409,14 @@ export default function InventoryPage() {
             <CardHeader>
               <CardTitle>Inter-Warehouse Transfers</CardTitle>
             </CardHeader>
-            <CardContent className="divide-y divide-border">
+            <CardBody className="divide-y divide-eta-border">
               {(transfersQuery.data?.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No stock transfers yet.</p>
+                <EmptyState
+                  variant="bordered"
+                  size="sm"
+                  title="No stock transfers yet"
+                  description="Create a stock transfer to move inventory between warehouses."
+                />
               ) : (
                 (transfersQuery.data?.data ?? []).map((t) => (
                   <div
@@ -391,12 +425,12 @@ export default function InventoryPage() {
                   >
                     <div>
                       <div className="font-mono text-xs font-semibold">{t.transfer_number}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-eta-muted">
                         {t.from_warehouse?.name ?? "?"} → {t.to_warehouse?.name ?? "?"}
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={t.status === "received" ? "success" : "warning"}>
+                      <Badge variant="soft" color={t.status === "received" ? "success" : "warning"}>
                         {t.status}
                       </Badge>
                       {t.status === "draft" && (
@@ -410,6 +444,8 @@ export default function InventoryPage() {
                       )}
                       {t.status === "in_transit" && (
                         <Button
+                          variant="solid"
+                          color="primary"
                           size="sm"
                           onClick={() =>
                             transferActionMutation.mutate({ id: t.id, action: "receive" })
@@ -422,7 +458,7 @@ export default function InventoryPage() {
                   </div>
                 ))
               )}
-            </CardContent>
+            </CardBody>
           </Card>
         </TabsContent>
 
@@ -431,25 +467,30 @@ export default function InventoryPage() {
             <CardHeader>
               <CardTitle>Expired / Near-Expiry Batches (30 Days)</CardTitle>
             </CardHeader>
-            <CardContent className="divide-y divide-border">
+            <CardBody className="divide-y divide-eta-border">
               {(expiredQuery.data?.data ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No expiring batches found.</p>
+                <EmptyState
+                  variant="bordered"
+                  size="sm"
+                  title="No expiring batches found"
+                  description="All tracked batches are within safe expiration windows."
+                />
               ) : (
                 (expiredQuery.data?.data ?? []).map((b) => (
                   <div key={b.id} className="flex items-center justify-between py-2.5 text-sm">
                     <div>
                       <div className="font-mono text-xs font-semibold">{b.batch_number}</div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-eta-muted">
                         {b.sku} — {b.variant_name}
                       </div>
                     </div>
-                    <Badge variant={b.is_expired ? "destructive" : "warning"}>
+                    <Badge variant="soft" color={b.is_expired ? "danger" : "warning"}>
                       {b.expired_at ?? "—"}
                     </Badge>
                   </div>
                 ))
               )}
-            </CardContent>
+            </CardBody>
           </Card>
         </TabsContent>
       </Tabs>
@@ -459,12 +500,11 @@ export default function InventoryPage() {
           <DialogHeader>
             <DialogTitle>Create Stock Adjustment Draft</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="space-y-1.5">
-              <Label>Warehouse</Label>
+          <DialogBody className="space-y-3">
+            <FormField label="Warehouse">
               <Select
-                value={adjWarehouseId || String(warehouses[0]?.id ?? "")}
-                onValueChange={(v) => setAdjWarehouseId(v ?? "")}
+                value={adjWarehouseId || (warehouses[0] ? String(warehouses[0].id) : undefined)}
+                onValueChange={(v) => setAdjWarehouseId(v)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select warehouse" />
@@ -477,12 +517,11 @@ export default function InventoryPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Product / SKU</Label>
+            </FormField>
+            <FormField label="Product / SKU">
               <Select
-                value={adjVariantId || String(allVariants[0]?.id ?? "")}
-                onValueChange={(v) => setAdjVariantId(v ?? "")}
+                value={adjVariantId || (allVariants[0] ? String(allVariants[0].id) : undefined)}
+                onValueChange={(v) => setAdjVariantId(v)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select product" />
@@ -495,10 +534,9 @@ export default function InventoryPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
+            </FormField>
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="space-y-1.5">
-                <Label>Direction</Label>
+              <FormField label="Direction">
                 <Select
                   value={adjDirection}
                   onValueChange={(v) => setAdjDirection((v as "in" | "out") ?? "in")}
@@ -511,40 +549,40 @@ export default function InventoryPage() {
                     <SelectItem value="out">Stock Out (-)</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Quantity</Label>
+              </FormField>
+              <FormField label="Quantity">
                 <Input
                   type="number"
                   min="1"
                   value={adjQty}
                   onChange={(e) => setAdjQty(e.target.value)}
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Unit Cost (Opt)</Label>
+              </FormField>
+              <FormField label="Unit Cost (Opt)">
                 <Input
                   type="number"
                   min="0"
                   value={adjUnitCost}
                   onChange={(e) => setAdjUnitCost(e.target.value)}
                 />
-              </div>
+              </FormField>
             </div>
-            <div className="space-y-1.5">
-              <Label>Reason</Label>
+            <FormField label="Reason">
               <Input
                 placeholder="e.g. Initial stock count / Damaged goods write-off"
                 value={adjReason}
                 onChange={(e) => setAdjReason(e.target.value)}
               />
-            </div>
-          </div>
+            </FormField>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setAdjOpen(false)}>
               Cancel
             </Button>
             <Button
+              variant="solid"
+              color="primary"
+              isLoading={createAdjMutation.isPending}
               disabled={createAdjMutation.isPending || !adjReason.trim()}
               onClick={() => createAdjMutation.mutate()}
             >
@@ -559,11 +597,10 @@ export default function InventoryPage() {
           <DialogHeader>
             <DialogTitle>Create Stock Transfer</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogBody className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>From Warehouse</Label>
-                <Select value={trfFromId} onValueChange={(v) => setTrfFromId(v ?? "")}>
+              <FormField label="From Warehouse">
+                <Select value={trfFromId || undefined} onValueChange={(v) => setTrfFromId(v)}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Source WH" />
                   </SelectTrigger>
@@ -575,10 +612,9 @@ export default function InventoryPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>To Warehouse</Label>
-                <Select value={trfToId} onValueChange={(v) => setTrfToId(v ?? "")}>
+              </FormField>
+              <FormField label="To Warehouse">
+                <Select value={trfToId || undefined} onValueChange={(v) => setTrfToId(v)}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Destination WH" />
                   </SelectTrigger>
@@ -590,14 +626,13 @@ export default function InventoryPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
             </div>
             <div className="grid gap-3 sm:grid-cols-3">
-              <div className="sm:col-span-2 space-y-1.5">
-                <Label>Product / SKU</Label>
+              <FormField label="Product / SKU" className="sm:col-span-2">
                 <Select
-                  value={trfVariantId || String(allVariants[0]?.id ?? "")}
-                  onValueChange={(v) => setTrfVariantId(v ?? "")}
+                  value={trfVariantId || (allVariants[0] ? String(allVariants[0].id) : undefined)}
+                  onValueChange={(v) => setTrfVariantId(v)}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select product" />
@@ -610,27 +645,28 @@ export default function InventoryPage() {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Quantity</Label>
+              </FormField>
+              <FormField label="Quantity">
                 <Input
                   type="number"
                   min="1"
                   value={trfQty}
                   onChange={(e) => setTrfQty(e.target.value)}
                 />
-              </div>
+              </FormField>
             </div>
-            <div className="space-y-1.5">
-              <Label>Notes</Label>
+            <FormField label="Notes">
               <Input value={trfNotes} onChange={(e) => setTrfNotes(e.target.value)} />
-            </div>
-          </div>
+            </FormField>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setTrfOpen(false)}>
               Cancel
             </Button>
             <Button
+              variant="solid"
+              color="primary"
+              isLoading={createTransferMutation.isPending}
               disabled={createTransferMutation.isPending || !trfFromId || !trfToId}
               onClick={() => createTransferMutation.mutate()}
             >

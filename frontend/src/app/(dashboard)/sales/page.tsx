@@ -2,8 +2,45 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Printer, RotateCcw } from "lucide-react";
-import { toast } from "sonner";
+import { Printer, Receipt, RotateCcw } from "lucide-react";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Dialog,
+  DialogBody,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Divider,
+  EmptyState,
+  FormField,
+  Heading,
+  Input,
+  SegmentedControl,
+  SegmentedControlItem,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Text,
+  useToast,
+} from "@eta-ui/react";
 import { apiFetch, ApiError } from "@/lib/api";
 import { printThermalReceipt } from "@/lib/print-receipt";
 import type {
@@ -13,25 +50,6 @@ import type {
   SaleSummary,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface RefundDraftLine {
   sale_item_id: number;
@@ -43,10 +61,13 @@ interface RefundDraftLine {
 }
 
 export default function SalesHistoryPage() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<"sales" | "returns">("sales");
   const [statusFilter, setStatusFilter] = useState("");
   const [receipt, setReceipt] = useState<ReceiptPayload | null>(null);
+  const [receiptSaleId, setReceiptSaleId] = useState<number | null>(null);
+  const [paperSize, setPaperSize] = useState<"58mm" | "80mm">("80mm");
 
   const [refundSale, setRefundSale] = useState<SaleSummary | null>(null);
   const [refundLines, setRefundLines] = useState<RefundDraftLine[]>([]);
@@ -117,9 +138,12 @@ export default function SalesHistoryPage() {
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Refund failed."),
   });
 
-  const openReceipt = async (saleId: number) => {
+  const openReceipt = async (saleId: number, targetPaperSize: "58mm" | "80mm" = paperSize) => {
     try {
-      const res = await apiFetch<ReceiptPayload>(`/sales/${saleId}/receipt?paper_size=80mm`);
+      const res = await apiFetch<ReceiptPayload>(
+        `/sales/${saleId}/receipt?paper_size=${targetPaperSize}`
+      );
+      setReceiptSaleId(saleId);
       setReceipt(res.data);
     } catch (err) {
       toast.error(err instanceof ApiError ? err.message : "Failed to load receipt.");
@@ -147,37 +171,40 @@ export default function SalesHistoryPage() {
     setRefundSale(sale);
   };
 
+  const sales = salesQuery.data?.data ?? [];
+  const returns = returnsQuery.data?.data ?? [];
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Sales Management</h1>
-          <p className="text-sm text-muted-foreground">
+          <Heading as="h1" size="xl" weight="semibold">
+            Sales Management
+          </Heading>
+          <Text size="sm" variant="muted" className="mt-0.5">
             Immutable sales ledger with receipt reprinting, returns/refunds, and authorized void.
-          </p>
+          </Text>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
+        <div className="flex flex-wrap items-center gap-3">
+          <Tabs
+            variant="underline"
             size="sm"
-            variant={activeTab === "sales" ? "default" : "outline"}
-            onClick={() => setActiveTab("sales")}
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as "sales" | "returns")}
           >
-            Transactions
-          </Button>
-          <Button
-            size="sm"
-            variant={activeTab === "returns" ? "default" : "outline"}
-            onClick={() => setActiveTab("returns")}
-          >
-            Returns & Refunds
-          </Button>
+            <TabsList>
+              <TabsTrigger value="sales">Transactions</TabsTrigger>
+              <TabsTrigger value="returns">Returns &amp; Refunds</TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           {activeTab === "sales" && (
             <Select
               value={statusFilter || "all"}
               onValueChange={(v) => setStatusFilter(!v || v === "all" ? "" : v)}
             >
-              <SelectTrigger className="w-44">
+              <SelectTrigger size="sm" className="w-44">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -195,202 +222,275 @@ export default function SalesHistoryPage() {
       </div>
 
       {activeTab === "sales" ? (
-        <Card>
-          <CardHeader>
+        <Card variant="elevated" padding="none">
+          <CardHeader className="px-6 pt-5 pb-3">
             <CardTitle>Transactions</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardBody>
             {salesQuery.isLoading ? (
-              <div className="h-24 animate-pulse rounded-md bg-muted" />
-            ) : (salesQuery.data?.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No sales transactions yet.</p>
+              <div className="space-y-2 p-6 pt-0">
+                {[1, 2, 3].map((n) => (
+                  <Skeleton key={n} variant="rounded" height={48} />
+                ))}
+              </div>
+            ) : sales.length === 0 ? (
+              <div className="p-6 pt-0">
+                <EmptyState
+                  variant="bordered"
+                  icon={<Receipt className="h-6 w-6" />}
+                  title="No sales transactions yet"
+                  description="Completed or held POS transactions will appear here."
+                />
+              </div>
             ) : (
-              <div className="divide-y divide-border">
-                {(salesQuery.data?.data ?? []).map((sale) => (
-                  <div
-                    key={sale.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-mono text-xs font-semibold">
+              <Table variant="hoverable" size="sm">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Transaction #</TableHead>
+                    <TableHead>Cashier</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead align="right">Total</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead align="right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sales.map((sale) => (
+                    <TableRow key={sale.id}>
+                      <TableCell className="font-mono text-xs font-semibold">
                         {sale.transaction_number}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {sale.cashier?.name ?? "Cashier"} • {sale.customer?.name ?? "Walk-in"} •{" "}
+                      </TableCell>
+                      <TableCell className="text-xs text-eta-muted">
+                        {sale.cashier?.name ?? "Cashier"}
+                      </TableCell>
+                      <TableCell className="text-xs text-eta-muted">
+                        {sale.customer?.name ?? "Walk-in"}
+                      </TableCell>
+                      <TableCell align="right" className="font-mono text-xs font-semibold">
                         {formatCurrency(sale.grand_total)}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge variant={sale.status === "paid" ? "success" : "warning"}>
-                        {sale.status}
-                      </Badge>
-                      <Button size="sm" variant="outline" onClick={() => openReceipt(sale.id)}>
-                        <Printer className="h-3.5 w-3.5" /> Receipt
-                      </Button>
-                      {(sale.status === "paid" || sale.status === "partially_refunded") && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => openRefundModal(sale)}
-                        >
-                          <RotateCcw className="h-3.5 w-3.5" /> Refund
-                        </Button>
-                      )}
-                      {sale.status !== "cancelled" && sale.status !== "refunded" && (
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() =>
-                            voidMutation.mutate({
-                              id: sale.id,
-                              reason: "Authorized void from backoffice",
-                            })
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="soft"
+                          color={
+                            sale.status === "paid"
+                              ? "success"
+                              : sale.status === "cancelled"
+                                ? "danger"
+                                : "warning"
                           }
                         >
-                          Void
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                          {sale.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell align="right">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            leftIcon={<Printer className="h-3.5 w-3.5" />}
+                            onClick={() => openReceipt(sale.id)}
+                          >
+                            Receipt
+                          </Button>
+                          {(sale.status === "paid" || sale.status === "partially_refunded") && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
+                              onClick={() => openRefundModal(sale)}
+                            >
+                              Refund
+                            </Button>
+                          )}
+                          {sale.status !== "cancelled" && sale.status !== "refunded" && (
+                            <Button
+                              size="sm"
+                              variant="soft"
+                              color="danger"
+                              isLoading={voidMutation.isPending}
+                              onClick={() =>
+                                voidMutation.mutate({
+                                  id: sale.id,
+                                  reason: "Authorized void from backoffice",
+                                })
+                              }
+                            >
+                              Void
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
-          </CardContent>
+          </CardBody>
         </Card>
       ) : (
-        <Card>
-          <CardHeader>
-            <CardTitle>Sale Returns & Refunds</CardTitle>
+        <Card variant="elevated" padding="none">
+          <CardHeader className="px-6 pt-5 pb-3">
+            <CardTitle>Sale Returns &amp; Refunds</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardBody>
             {returnsQuery.isLoading ? (
-              <div className="h-24 animate-pulse rounded-md bg-muted" />
-            ) : (returnsQuery.data?.data ?? []).length === 0 ? (
-              <p className="text-sm text-muted-foreground">No sale returns recorded yet.</p>
-            ) : (
-              <div className="divide-y divide-border">
-                {(returnsQuery.data?.data ?? []).map((ret) => (
-                  <div
-                    key={ret.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-mono text-xs font-semibold">{ret.return_number}</div>
-                      <div className="text-xs text-muted-foreground">
-                        Ref: {ret.sale?.transaction_number ?? `#${ret.id}`} • {ret.reason}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="font-mono text-sm font-semibold">
-                        {formatCurrency(ret.refund_amount)}
-                      </span>
-                      <Badge variant="success">{ret.status}</Badge>
-                    </div>
-                  </div>
+              <div className="space-y-2 p-6 pt-0">
+                {[1, 2, 3].map((n) => (
+                  <Skeleton key={n} variant="rounded" height={48} />
                 ))}
               </div>
+            ) : returns.length === 0 ? (
+              <div className="p-6 pt-0">
+                <EmptyState
+                  variant="bordered"
+                  icon={<RotateCcw className="h-6 w-6" />}
+                  title="No sale returns recorded yet"
+                  description="Processed refunds and returned items will appear here."
+                />
+              </div>
+            ) : (
+              <Table variant="hoverable" size="sm">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Return #</TableHead>
+                    <TableHead>Reference Sale</TableHead>
+                    <TableHead>Reason</TableHead>
+                    <TableHead align="right">Refund Amount</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {returns.map((ret) => (
+                    <TableRow key={ret.id}>
+                      <TableCell className="font-mono text-xs font-semibold">
+                        {ret.return_number}
+                      </TableCell>
+                      <TableCell className="font-mono text-xs text-eta-muted">
+                        {ret.sale?.transaction_number ?? `#${ret.id}`}
+                      </TableCell>
+                      <TableCell className="text-xs text-eta-muted">{ret.reason}</TableCell>
+                      <TableCell align="right" className="font-mono text-xs font-semibold">
+                        {formatCurrency(ret.refund_amount)}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="soft" color="success">
+                          {ret.status}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
-          </CardContent>
+          </CardBody>
         </Card>
       )}
 
       <Dialog open={Boolean(refundSale)} onOpenChange={(o) => !o && setRefundSale(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent size="lg">
           <DialogHeader>
             <DialogTitle>
               Process Return &amp; Refund — {refundSale?.transaction_number}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-2 max-h-60 overflow-auto">
-            {refundLines.map((line, idx) => (
-              <div
-                key={line.sale_item_id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border p-2.5 text-xs"
-              >
-                <div>
-                  <div className="font-medium">{line.name}</div>
-                  <div className="text-muted-foreground font-mono">
-                    {line.sku} • Max refundable: {line.remaining}
+          <DialogBody className="space-y-4">
+            <div className="max-h-60 space-y-2 overflow-auto">
+              {refundLines.map((line, idx) => (
+                <div
+                  key={line.sale_item_id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-eta-border p-2.5 text-xs"
+                >
+                  <div>
+                    <div className="font-medium text-eta-heading">{line.name}</div>
+                    <div className="font-mono text-eta-muted">
+                      {line.sku} • Max refundable: {line.remaining}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      type="number"
+                      size="sm"
+                      min="0"
+                      max={line.remaining}
+                      value={line.quantity}
+                      onChange={(e) =>
+                        setRefundLines((prev) =>
+                          prev.map((item, i) =>
+                            i === idx ? { ...item, quantity: e.target.value } : item
+                          )
+                        )
+                      }
+                      className="w-20 font-mono"
+                    />
+                    <Select
+                      value={line.condition}
+                      onValueChange={(v) =>
+                        setRefundLines((prev) =>
+                          prev.map((item, i) =>
+                            i === idx
+                              ? {
+                                  ...item,
+                                  condition: (v as "resellable" | "damaged") ?? "resellable",
+                                }
+                              : item
+                          )
+                        )
+                      }
+                    >
+                      <SelectTrigger size="sm" className="w-40 text-xs">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="resellable">Resellable (Restock)</SelectItem>
+                        <SelectItem value="damaged">Damaged</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Input
-                    type="number"
-                    min="0"
-                    max={line.remaining}
-                    value={line.quantity}
-                    onChange={(e) =>
-                      setRefundLines((prev) =>
-                        prev.map((item, i) =>
-                          i === idx ? { ...item, quantity: e.target.value } : item
-                        )
-                      )
-                    }
-                    className="h-8 w-20 font-mono"
-                  />
-                  <Select
-                    value={line.condition}
-                    onValueChange={(v) =>
-                      setRefundLines((prev) =>
-                        prev.map((item, i) =>
-                          i === idx
-                            ? {
-                                ...item,
-                                condition: (v as "resellable" | "damaged") ?? "resellable",
-                              }
-                            : item
-                        )
-                      )
-                    }
-                  >
-                    <SelectTrigger className="h-8 w-40 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="resellable">Resellable (Restock)</SelectItem>
-                      <SelectItem value="damaged">Damaged</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Refund Method</Label>
-              <Select
-                value={refundMethodId || String(paymentMethodsQuery.data?.data[0]?.id ?? "")}
-                onValueChange={(v) => setRefundMethodId(v ?? "")}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select method" />
-                </SelectTrigger>
-                <SelectContent>
-                  {(paymentMethodsQuery.data?.data ?? []).map((pm) => (
-                    <SelectItem key={pm.id} value={String(pm.id)}>
-                      {pm.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <Divider spacing="none" />
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <FormField label="Refund Method">
+                <Select
+                  value={refundMethodId || String(paymentMethodsQuery.data?.data[0]?.id ?? "")}
+                  onValueChange={(v) => setRefundMethodId(v ?? "")}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(paymentMethodsQuery.data?.data ?? []).map((pm) => (
+                      <SelectItem key={pm.id} value={String(pm.id)}>
+                        {pm.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </FormField>
+
+              <FormField label="Reason" isRequired>
+                <Input
+                  placeholder="Return reason"
+                  value={refundReason}
+                  onChange={(e) => setRefundReason(e.target.value)}
+                />
+              </FormField>
             </div>
-            <div className="space-y-1.5">
-              <Label>Reason</Label>
-              <Input
-                placeholder="Return reason"
-                value={refundReason}
-                onChange={(e) => setRefundReason(e.target.value)}
-              />
-            </div>
-          </div>
+          </DialogBody>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setRefundSale(null)}>
               Cancel
             </Button>
             <Button
+              variant="solid"
+              color="primary"
+              isLoading={refundMutation.isPending}
               disabled={refundMutation.isPending || refundReason.trim().length < 3}
               onClick={() => refundMutation.mutate()}
             >
@@ -400,17 +500,50 @@ export default function SalesHistoryPage() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={Boolean(receipt)} onOpenChange={(o) => !o && setReceipt(null)}>
-        <DialogContent>
+      <Dialog
+        open={Boolean(receipt)}
+        onOpenChange={(o) => {
+          if (!o) {
+            setReceipt(null);
+            setReceiptSaleId(null);
+          }
+        }}
+      >
+        <DialogContent size="md">
           <DialogHeader>
             <DialogTitle>Reprint Receipt — {receipt?.transaction_number}</DialogTitle>
           </DialogHeader>
-          <pre className="max-h-96 overflow-auto rounded-lg bg-muted p-3 font-mono text-xs whitespace-pre-wrap">
-            {receipt?.thermal_text}
-          </pre>
+          <DialogBody className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Text size="xs" variant="muted">
+                Paper Size
+              </Text>
+              <SegmentedControl
+                type="single"
+                variant="segmented"
+                size="sm"
+                value={paperSize}
+                onValueChange={(val) => {
+                  if (val === "58mm" || val === "80mm") {
+                    setPaperSize(val);
+                    if (receiptSaleId !== null) {
+                      void openReceipt(receiptSaleId, val);
+                    }
+                  }
+                }}
+              >
+                <SegmentedControlItem value="58mm">58mm</SegmentedControlItem>
+                <SegmentedControlItem value="80mm">80mm</SegmentedControlItem>
+              </SegmentedControl>
+            </div>
+            <pre className="max-h-96 overflow-auto rounded-lg bg-eta-subtle p-3 font-mono text-xs whitespace-pre-wrap text-eta-heading">
+              {receipt?.thermal_text}
+            </pre>
+          </DialogBody>
           <DialogFooter>
             <Button
               variant="outline"
+              leftIcon={<Printer className="h-4 w-4" />}
               onClick={() => {
                 if (receipt) {
                   printThermalReceipt(
@@ -423,7 +556,16 @@ export default function SalesHistoryPage() {
             >
               Print
             </Button>
-            <Button onClick={() => setReceipt(null)}>Close</Button>
+            <Button
+              variant="solid"
+              color="primary"
+              onClick={() => {
+                setReceipt(null);
+                setReceiptSaleId(null);
+              }}
+            >
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeScript } from "@eta-ui/react";
 import { Providers } from "@/components/providers";
 import "./globals.css";
 
 const geistSans = Geist({
-  variable: "--font-geist-sans",
+  variable: "--eta-font-sans",
   subsets: ["latin"],
 });
 
@@ -15,7 +16,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Enterprise POS — Retail & Operations Platform",
-  description: "Multi-store Enterprise Point of Sales, Inventory, Purchasing, and Financial Management.",
+  description:
+    "Multi-store Enterprise Point of Sales, Inventory, Purchasing, and Financial Management.",
 };
 
 export default function RootLayout({
@@ -29,7 +31,10 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
+      <head>
+        <ThemeScript defaultTheme="system" />
+      </head>
+      <body className="min-h-full flex flex-col bg-eta-base text-eta-body">
         <Providers>{children}</Providers>
       </body>
     </html>

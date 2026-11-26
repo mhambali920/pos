@@ -3,9 +3,9 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-001` |
-| **Version** | `1.0.0` |
+| **Version** | `1.1.0` |
 | **Status** | `Approved Baseline` |
-| **Last Updated** | `2026-11-19` |
+| **Last Updated** | `2026-11-26` |
 | **Author** | Principal Software Architect (AI Agent) |
 
 ---
@@ -35,8 +35,8 @@ Aplikasi mendukung penuh:
 | **Backend** | Laravel 13 (PHP 8.5), Modular Monolith, RESTful API | Konsistensi ACID tinggi, ekosistem matang, isolasi domain jelas tanpa overhead microservices prematur. |
 | **Auth & RBAC** | Laravel Sanctum + Spatie Laravel Permission | Native untuk Next.js SPA/POS terminal, granular permission & role management. |
 | **API Docs** | Dedoc Scramble (OpenAPI 3.1) | Dokumentasi API selalu sinkron dengan FormRequest, Controller, dan API Resource. |
-| **Frontend** | Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui | UI enterprise modern, type-safe, terpisah antara layout Admin Backoffice dan POS Terminal berkecepatan tinggi. |
-| **Frontend State** | TanStack Query, Zustand, React Hook Form, Zod, TanStack Table, Recharts | Pemisahan tegas antara server state, client state (cart/session), validasi form, dan analitik. |
+| **Frontend** | Next.js (App Router), TypeScript, Tailwind CSS v4, `@eta-ui/react` | UI enterprise modern berbasis Radix UI & CSS-variable `--eta-*` (WCAG 2.1 AA), terpisah antara layout Admin Backoffice dan POS Terminal berkecepatan tinggi. |
+| **Frontend State** | TanStack Query, Zustand, React Hook Form, Zod | Pemisahan tegas antara server state, client state (cart/session), dan validasi form; chart, toast, theme, dan datepicker ditangani native oleh `@eta-ui/react`. |
 | **Database** | MariaDB / MySQL (InnoDB) | Transaksi ACID, foreign key strict, row-level locking (`SELECT ... FOR UPDATE`), presisi `DECIMAL`. |
 | **Cache & Queue** | Redis + Laravel Queue (+ Laravel Reverb opsional) | Rate limiting, idempotency locks, async reporting/export, dan notifikasi realtime. |
 
@@ -70,3 +70,4 @@ Prioritas rekayasa secara berurutan:
 | Version | Date | Phase | Author | Summary of Changes |
 | :--- | :--- | :--- | :--- | :--- |
 | `1.0.0` | `2026-11-19` | Phase 0 | AI Architect | Initial creation of Project Overview based on approved monorepo fresh-install baseline (`backend/` Laravel 13 + `frontend/` Next.js). |
+| `1.1.0` | `2026-11-26` | UI Redesign | AI Frontend Architect | Updated Frontend stack to `@eta-ui/react` design system (replacing `shadcn/ui`, `recharts`, `sonner`, `next-themes`). |

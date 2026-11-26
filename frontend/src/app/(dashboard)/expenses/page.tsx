@@ -2,8 +2,35 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, FileText, Plus, XCircle } from "lucide-react";
-import { toast } from "sonner";
+import { CheckCircle2, FileText, Plus, Receipt, XCircle } from "lucide-react";
+import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  Checkbox,
+  EmptyState,
+  FormField,
+  Heading,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Text,
+  useToast,
+} from "@eta-ui/react";
+import { IsoDatePicker } from "@/components/shared/iso-date-picker";
 import { apiFetch, ApiError } from "@/lib/api";
 import type {
   CurrentRegisterPayload,
@@ -11,22 +38,9 @@ import type {
   ExpenseItem,
 } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Checkbox } from "@/components/ui/checkbox";
-import { DatePicker } from "@/components/ui/date-picker";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 export default function ExpensesPage() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState("");
   const [showForm, setShowForm] = useState(false);
@@ -131,17 +145,19 @@ export default function ExpensesPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Expense Management</h1>
-          <p className="text-sm text-muted-foreground">
+          <Heading as="h1" size="xl" weight="semibold">
+            Expense Management
+          </Heading>
+          <Text size="sm" variant="muted" className="mt-0.5">
             Track store operational expenses with receipt attachments and manager approval workflow.
-          </p>
+          </Text>
         </div>
         <div className="flex items-center gap-2">
           <Select
             value={statusFilter || "all"}
             onValueChange={(v) => setStatusFilter(!v || v === "all" ? "" : v)}
           >
-            <SelectTrigger className="w-44">
+            <SelectTrigger size="sm" className="w-44">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -152,6 +168,10 @@ export default function ExpensesPage() {
             </SelectContent>
           </Select>
           <Button
+            variant="solid"
+            color="primary"
+            size="sm"
+            leftIcon={<Plus className="h-4 w-4" />}
             onClick={() => {
               if (!expenseDate) {
                 setExpenseDate(new Date().toISOString().slice(0, 10));
@@ -159,19 +179,18 @@ export default function ExpensesPage() {
               setShowForm((v) => !v);
             }}
           >
-            <Plus className="h-4 w-4" /> New Expense
+            New Expense
           </Button>
         </div>
       </div>
 
       {showForm && (
-        <Card>
+        <Card variant="elevated">
           <CardHeader>
             <CardTitle>Submit Expense</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Category</Label>
+          <CardBody className="grid gap-4 sm:grid-cols-2">
+            <FormField label="Category">
               <Select
                 value={categoryId || String(categories[0]?.id ?? "")}
                 onValueChange={(v) => setCategoryId(v ?? "")}
@@ -187,152 +206,192 @@ export default function ExpensesPage() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-            <div className="space-y-1.5">
-              <Label>Expense Date</Label>
-              <DatePicker
+            </FormField>
+
+            <FormField label="Expense Date">
+              <IsoDatePicker
                 value={expenseDate}
                 onChange={setExpenseDate}
                 placeholder="Select expense date"
               />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Amount</label>
+            </FormField>
+
+            <FormField label="Amount" isRequired>
               <Input
                 type="number"
                 min="0"
                 placeholder="50000"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="mt-1 font-mono"
+                className="font-mono"
               />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">
-                Receipt Attachment (PDF / Image)
-              </label>
+            </FormField>
+
+            <FormField label="Receipt Attachment (PDF / Image)">
               <Input
                 type="file"
                 accept=".pdf,image/*"
                 onChange={(e) => setAttachment(e.target.files?.[0] ?? null)}
-                className="mt-1"
               />
-            </div>
+            </FormField>
+
             <div className="sm:col-span-2">
-              <label className="text-xs font-medium text-muted-foreground">Description</label>
-              <Input
-                placeholder="Describe the store operational expense"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="mt-1"
-              />
+              <FormField label="Description" isRequired>
+                <Input
+                  placeholder="Describe the store operational expense"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                />
+              </FormField>
             </div>
+
             {openSession && (
-              <label className="sm:col-span-2 flex items-center gap-2 text-xs cursor-pointer">
+              <div className="sm:col-span-2">
                 <Checkbox
+                  label={`Deduct from active cash register session (#${openSession.id}) upon approval`}
                   checked={useCashDrawer}
                   onCheckedChange={(v) => setUseCashDrawer(Boolean(v))}
                 />
-                Deduct from active cash register session (#{openSession.id}) upon approval
-              </label>
+              </div>
             )}
-            <div className="sm:col-span-2 flex justify-end gap-2">
+
+            <div className="flex justify-end gap-2 sm:col-span-2">
               <Button variant="outline" onClick={() => setShowForm(false)}>
                 Cancel
               </Button>
               <Button
+                variant="solid"
+                color="primary"
+                isLoading={createExpenseMutation.isPending}
                 disabled={createExpenseMutation.isPending || !amount || !description}
                 onClick={() => createExpenseMutation.mutate()}
               >
                 Submit Expense
               </Button>
             </div>
-          </CardContent>
+          </CardBody>
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
+      <Card variant="elevated" padding="none">
+        <CardHeader className="px-6 pt-5 pb-3">
           <CardTitle>Expenses</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardBody>
           {expensesQuery.isLoading ? (
-            <div className="h-24 animate-pulse rounded-md bg-muted" />
-          ) : expenses.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No expenses recorded yet.</p>
-          ) : (
-            <div className="divide-y divide-border">
-              {expenses.map((exp) => (
-                <div
-                  key={exp.id}
-                  className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-semibold">{exp.expense_number}</span>
-                      <Badge variant="muted">{exp.category?.name ?? "General"}</Badge>
-                      {exp.attachment_path && (
-                        <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                          <FileText className="h-3 w-3" /> Receipt
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-sm mt-0.5">{exp.description}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {exp.expense_date} • By {exp.creator?.name ?? "Staff"} •{" "}
-                      <span className="font-mono font-medium text-foreground">
-                        {formatCurrency(exp.amount)}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge
-                      variant={
-                        exp.status === "approved"
-                          ? "success"
-                          : exp.status === "rejected"
-                            ? "warning"
-                            : "muted"
-                      }
-                    >
-                      {exp.status}
-                    </Badge>
-                    {exp.status === "pending_approval" && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => approveMutation.mutate(exp.id)}
-                        >
-                          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() =>
-                            rejectMutation.mutate({
-                              id: exp.id,
-                              reason: "Rejected during backoffice review",
-                            })
-                          }
-                        >
-                          <XCircle className="h-3.5 w-3.5" /> Reject
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
+            <div className="space-y-2 p-6 pt-0">
+              {[1, 2, 3].map((n) => (
+                <Skeleton key={n} variant="rounded" height={48} />
               ))}
             </div>
+          ) : expenses.length === 0 ? (
+            <div className="p-6 pt-0">
+              <EmptyState
+                variant="bordered"
+                icon={<Receipt className="h-6 w-6" />}
+                title="No expenses recorded yet"
+                description="Submitted operational expenses will appear here for approval."
+              />
+            </div>
+          ) : (
+            <Table variant="hoverable" size="sm">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Expense #</TableHead>
+                  <TableHead>Category &amp; Description</TableHead>
+                  <TableHead>Date &amp; Staff</TableHead>
+                  <TableHead align="right">Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead align="right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {expenses.map((exp) => (
+                  <TableRow key={exp.id}>
+                    <TableCell className="font-mono text-xs font-semibold">
+                      <div className="flex items-center gap-1.5">
+                        <span>{exp.expense_number}</span>
+                        {exp.attachment_path && (
+                          <span
+                            className="inline-flex items-center gap-1 text-eta-muted"
+                            title="Has receipt attachment"
+                          >
+                            <FileText className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <div className="text-sm text-eta-heading">{exp.description}</div>
+                        <div>
+                          <Badge variant="soft" color="neutral" size="sm">
+                            {exp.category?.name ?? "General"}
+                          </Badge>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs text-eta-muted">
+                      {exp.expense_date} • By {exp.creator?.name ?? "Staff"}
+                    </TableCell>
+                    <TableCell align="right" className="font-mono text-xs font-semibold">
+                      {formatCurrency(exp.amount)}
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="soft"
+                        color={
+                          exp.status === "approved"
+                            ? "success"
+                            : exp.status === "rejected"
+                              ? "warning"
+                              : "neutral"
+                        }
+                      >
+                        {exp.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell align="right">
+                      {exp.status === "pending_approval" && (
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            leftIcon={<CheckCircle2 className="h-3.5 w-3.5 text-eta-success" />}
+                            onClick={() => approveMutation.mutate(exp.id)}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="soft"
+                            color="danger"
+                            leftIcon={<XCircle className="h-3.5 w-3.5" />}
+                            onClick={() =>
+                              rejectMutation.mutate({
+                                id: exp.id,
+                                reason: "Rejected during backoffice review",
+                              })
+                            }
+                          >
+                            Reject
+                          </Button>
+                        </div>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
-        </CardContent>
+        </CardBody>
       </Card>
 
-      <Card>
+      <Card variant="elevated">
         <CardHeader>
           <CardTitle>Add Expense Category</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3 sm:flex-row">
+        <CardBody className="flex flex-col gap-3 sm:flex-row">
           <Input
             placeholder="Code (e.g. TRANS)"
             value={newCatCode}
@@ -346,12 +405,15 @@ export default function ExpensesPage() {
             className="flex-1"
           />
           <Button
+            variant="solid"
+            color="primary"
+            isLoading={createCategoryMutation.isPending}
             disabled={createCategoryMutation.isPending || !newCatCode || !newCatName}
             onClick={() => createCategoryMutation.mutate()}
           >
             Add Category
           </Button>
-        </CardContent>
+        </CardBody>
       </Card>
     </div>
   );

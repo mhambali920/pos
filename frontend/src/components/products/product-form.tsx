@@ -5,7 +5,29 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, ImagePlus, Save, X } from "lucide-react";
-import { toast } from "sonner";
+import {
+  AspectRatio,
+  Button,
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  FormField,
+  FormLabel,
+  Heading,
+  IconButton,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  Switch,
+  Text,
+  Textarea,
+  useToast,
+} from "@eta-ui/react";
 import { apiFetch, ApiError } from "@/lib/api";
 import type {
   BrandItem,
@@ -14,25 +36,13 @@ import type {
   TaxItem,
   UnitItem,
 } from "@/lib/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 interface ProductFormProps {
   product?: ProductItem | null;
 }
 
 export function ProductForm({ product }: ProductFormProps) {
+  const { toast } = useToast();
   const router = useRouter();
   const queryClient = useQueryClient();
   const isEditing = Boolean(product);
@@ -169,28 +179,37 @@ export function ProductForm({ product }: ProductFormProps) {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
           <Link href="/products">
-            <Button variant="outline" size="icon" aria-label="Back to products">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
+            <IconButton
+              icon={<ArrowLeft className="h-4 w-4" />}
+              variant="outline"
+              size="sm"
+              aria-label="Back to products"
+            />
           </Link>
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
+            <Heading as="h1" size="xl" weight="semibold">
               {isEditing ? `Edit Product — ${product?.name}` : "Add New Product"}
-            </h1>
-            <p className="text-sm text-muted-foreground">
+            </Heading>
+            <Text size="sm" variant="muted" className="mt-0.5">
               {isEditing
                 ? "Update product information, pricing, and product photo."
                 : "Create a new catalog product with SKU, pricing, and photo."}
-            </p>
+            </Text>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/products">
-            <Button variant="outline">Cancel</Button>
-          </Link>
-          <Button disabled={!canSubmit} onClick={() => saveMutation.mutate()}>
-            <Save className="h-4 w-4" />
+          <Button asChild variant="outline">
+            <Link href="/products">Cancel</Link>
+          </Button>
+          <Button
+            variant="solid"
+            color="primary"
+            disabled={!canSubmit}
+            isLoading={saveMutation.isPending}
+            leftIcon={<Save className="h-4 w-4" />}
+            onClick={() => saveMutation.mutate()}
+          >
             {isEditing ? "Save Changes" : "Create Product"}
           </Button>
         </div>
@@ -198,24 +217,22 @@ export function ProductForm({ product }: ProductFormProps) {
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
-          <Card>
+          <Card variant="elevated" padding="md">
             <CardHeader>
               <CardTitle>General Information</CardTitle>
               <CardDescription>Basic product identity and classification.</CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="sm:col-span-2 space-y-1.5">
-                <Label htmlFor="prod-name">Product Name</Label>
+            <CardBody className="grid gap-4 sm:grid-cols-2">
+              <FormField label="Product Name" className="sm:col-span-2">
                 <Input
                   id="prod-name"
                   placeholder="e.g. Kopi Arabika 250g"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label>Product Type</Label>
+              <FormField label="Product Type">
                 <Select
                   value={productType}
                   disabled={isEditing}
@@ -232,10 +249,9 @@ export function ProductForm({ product }: ProductFormProps) {
                     <SelectItem value="non_stock">Non-Stock</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label>Base Unit</Label>
+              <FormField label="Base Unit">
                 <Select value={resolvedUnitId} onValueChange={(v) => setBaseUnitId(v ?? "")}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select unit" />
@@ -248,10 +264,9 @@ export function ProductForm({ product }: ProductFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label>Category</Label>
+              <FormField label="Category">
                 <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? "none")}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select category" />
@@ -265,10 +280,9 @@ export function ProductForm({ product }: ProductFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label>Brand</Label>
+              <FormField label="Brand">
                 <Select value={brandId} onValueChange={(v) => setBrandId(v ?? "none")}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Select brand" />
@@ -282,10 +296,9 @@ export function ProductForm({ product }: ProductFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label>Tax</Label>
+              <FormField label="Tax">
                 <Select value={taxId} onValueChange={(v) => setTaxId(v ?? "none")}>
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="No Tax" />
@@ -299,30 +312,28 @@ export function ProductForm({ product }: ProductFormProps) {
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </FormField>
 
-              <div className="sm:col-span-2 space-y-1.5">
-                <Label htmlFor="prod-desc">Description</Label>
+              <FormField label="Description" className="sm:col-span-2">
                 <Textarea
                   id="prod-desc"
                   placeholder="Optional product description"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                 />
-              </div>
-            </CardContent>
+              </FormField>
+            </CardBody>
           </Card>
 
-          <Card>
+          <Card variant="elevated" padding="md">
             <CardHeader>
               <CardTitle>SKU &amp; Pricing</CardTitle>
               <CardDescription>
                 Primary variant identifiers and decimal-safe pricing rules.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-sku">Primary SKU</Label>
+            <CardBody className="grid gap-4 sm:grid-cols-2">
+              <FormField label="Primary SKU">
                 <Input
                   id="prod-sku"
                   placeholder="e.g. COF-001"
@@ -331,10 +342,9 @@ export function ProductForm({ product }: ProductFormProps) {
                   onChange={(e) => setSku(e.target.value)}
                   className="font-mono"
                 />
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-barcode">Barcode (Optional)</Label>
+              <FormField label="Barcode (Optional)">
                 <Input
                   id="prod-barcode"
                   placeholder="e.g. 8991009000011"
@@ -343,10 +353,9 @@ export function ProductForm({ product }: ProductFormProps) {
                   onChange={(e) => setBarcode(e.target.value)}
                   className="font-mono"
                 />
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-buy">Purchase Price</Label>
+              <FormField label="Purchase Price">
                 <Input
                   id="prod-buy"
                   type="number"
@@ -355,10 +364,9 @@ export function ProductForm({ product }: ProductFormProps) {
                   onChange={(e) => setPurchasePrice(e.target.value)}
                   className="font-mono"
                 />
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-sell">Selling Price</Label>
+              <FormField label="Selling Price">
                 <Input
                   id="prod-sell"
                   type="number"
@@ -368,10 +376,9 @@ export function ProductForm({ product }: ProductFormProps) {
                   onChange={(e) => setSellingPrice(e.target.value)}
                   className="font-mono"
                 />
-              </div>
+              </FormField>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="prod-min">Min Selling Price</Label>
+              <FormField label="Min Selling Price">
                 <Input
                   id="prod-min"
                   type="number"
@@ -380,31 +387,33 @@ export function ProductForm({ product }: ProductFormProps) {
                   onChange={(e) => setMinSellingPrice(e.target.value)}
                   className="font-mono"
                 />
-              </div>
+              </FormField>
 
               {isEditing && (
-                <div className="space-y-1.5">
-                  <Label htmlFor="prod-reason">Price Change Reason (Optional)</Label>
+                <FormField label="Price Change Reason (Optional)">
                   <Input
                     id="prod-reason"
                     placeholder="e.g. Supplier cost update"
                     value={priceChangeReason}
                     onChange={(e) => setPriceChangeReason(e.target.value)}
                   />
-                </div>
+                </FormField>
               )}
-            </CardContent>
+            </CardBody>
           </Card>
         </div>
 
         <div className="space-y-6">
-          <Card>
+          <Card variant="elevated" padding="md">
             <CardHeader>
               <CardTitle>Product Photo</CardTitle>
               <CardDescription>JPG, PNG, or WEBP up to 4 MB.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl border border-border bg-muted">
+            <CardBody className="space-y-4">
+              <AspectRatio
+                ratio={4 / 3}
+                className="relative overflow-hidden rounded-xl border border-eta-border bg-eta-subtle"
+              >
                 <img
                   src={previewUrl}
                   alt={name || "Product preview"}
@@ -416,23 +425,23 @@ export function ProductForm({ product }: ProductFormProps) {
                   className="h-full w-full object-cover"
                 />
                 {imageFile && (
-                  <Button
+                  <IconButton
                     type="button"
-                    size="icon"
-                    variant="secondary"
+                    size="sm"
+                    variant="soft"
+                    color="secondary"
+                    icon={<X className="h-3.5 w-3.5" />}
                     aria-label="Clear selected photo"
                     onClick={() => setImageFile(null)}
-                    className="absolute right-2 top-2 h-7 w-7"
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </Button>
+                    className="absolute right-2 top-2"
+                  />
                 )}
-              </div>
+              </AspectRatio>
 
               <div className="space-y-1.5">
-                <Label htmlFor="prod-photo" className="inline-flex items-center gap-1.5">
+                <FormLabel htmlFor="prod-photo" className="inline-flex items-center gap-1.5">
                   <ImagePlus className="h-3.5 w-3.5" /> Upload Photo
-                </Label>
+                </FormLabel>
                 <Input
                   id="prod-photo"
                   type="file"
@@ -440,35 +449,39 @@ export function ProductForm({ product }: ProductFormProps) {
                   onChange={(e) => setImageFile(e.target.files?.[0] ?? null)}
                 />
                 {imageFile && (
-                  <p className="text-xs text-muted-foreground truncate">
+                  <Text size="xs" variant="muted" className="truncate">
                     Selected: {imageFile.name}
-                  </p>
+                  </Text>
                 )}
               </div>
-            </CardContent>
+            </CardBody>
           </Card>
 
-          <Card>
+          <Card variant="elevated" padding="md">
             <CardHeader>
               <CardTitle>Status &amp; Inventory</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+            <CardBody className="space-y-3">
+              <div className="flex items-center justify-between rounded-lg border border-eta-border p-3">
                 <div>
-                  <Label>Track Inventory</Label>
-                  <p className="text-xs text-muted-foreground">Deduct stock on POS sales</p>
+                  <FormLabel>Track Inventory</FormLabel>
+                  <Text size="xs" variant="muted">
+                    Deduct stock on POS sales
+                  </Text>
                 </div>
                 <Switch checked={trackInventory} onCheckedChange={setTrackInventory} />
               </div>
 
-              <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div className="flex items-center justify-between rounded-lg border border-eta-border p-3">
                 <div>
-                  <Label>Active</Label>
-                  <p className="text-xs text-muted-foreground">Visible in POS terminal</p>
+                  <FormLabel>Active</FormLabel>
+                  <Text size="xs" variant="muted">
+                    Visible in POS terminal
+                  </Text>
                 </div>
                 <Switch checked={isActive} onCheckedChange={setIsActive} />
               </div>
-            </CardContent>
+            </CardBody>
           </Card>
         </div>
       </div>

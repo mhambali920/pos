@@ -3,9 +3,9 @@
 | Metadata | Value |
 | :--- | :--- |
 | **Document ID** | `DOC-002` |
-| **Version** | `1.0.0` |
+| **Version** | `1.1.0` |
 | **Status** | `Approved Baseline` |
-| **Last Updated** | `2026-11-19` |
+| **Last Updated** | `2026-11-26` |
 | **Author** | Principal Software Architect (AI Agent) |
 
 ---
@@ -129,8 +129,10 @@ frontend/src/
 │   ├── (dashboard)/         # Backoffice Layout (Sidebar, Topbar, Dark/Light mode)
 │   └── (pos)/               # Fullscreen POS Terminal (Keyboard & Barcode First)
 ├── components/
-│   ├── ui/                  # shadcn/ui primitives
-│   └── shared/              # DataTable, ConfirmDialog, EmptyState, Skeleton
+│   ├── layout/              # DashboardShell, SidebarNav, Topbar (@eta-ui/react)
+│   ├── pos/                 # Modular POS overlays (CustomerDrawer, HeldDrawer, ReceiptDialog)
+│   ├── products/            # ProductForm
+│   └── shared/              # IsoDatePicker & shared adapters over @eta-ui/react
 ├── features/                # Feature-sliced UI (pos, products, inventory, purchasing, sales, cash, reports)
 ├── hooks/                   # useBarcodeScanner, usePosShortcuts, useActiveStore
 ├── lib/                     # Axios/Fetch API client, TanStack Query client, Zod schemas, currency formatters
@@ -156,3 +158,4 @@ pos/
 | Version | Date | Phase | Author | Summary of Changes |
 | :--- | :--- | :--- | :--- | :--- |
 | `1.0.0` | `2026-11-19` | Phase 0 | AI Architect | Initial architecture blueprint covering system diagram, 27-module breakdown, boundary rules, and monorepo structure. |
+| `1.1.0` | `2026-11-26` | UI Redesign | AI Frontend Architect | Updated Section 4 Frontend Architecture to reflect `@eta-ui/react` migration and removal of `components/ui/`. |

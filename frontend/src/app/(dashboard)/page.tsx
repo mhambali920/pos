@@ -11,28 +11,28 @@ import {
   Receipt,
   TrendingUp,
 } from "lucide-react";
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import {
+  Badge,
+  BarChart,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  Heading,
+  SegmentedControl,
+  SegmentedControlItem,
+  Skeleton,
+  Stat,
+  StatGroup,
+  Text,
+} from "@eta-ui/react";
+import { IsoDatePicker } from "@/components/shared/iso-date-picker";
 import { apiFetch } from "@/lib/api";
 import type { DashboardPayload } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-  type ChartConfig,
-} from "@/components/ui/chart";
-import { DatePicker } from "@/components/ui/date-picker";
 import { useAuthStore } from "@/stores/auth-store";
-
-const revenueChartConfig = {
-  revenue: {
-    label: "Revenue",
-    color: "var(--chart-1)",
-  },
-} satisfies ChartConfig;
 
 export default function DashboardHomePage() {
   const { user, activeStoreId } = useAuthStore();
@@ -57,52 +57,61 @@ export default function DashboardHomePage() {
   const data = dashboardQuery.data?.data;
   const chartData = (data?.daily_trend ?? []).map((pt) => ({
     date: pt.date,
-    revenue: Number.parseFloat(pt.revenue),
+    revenue: Number.parseFloat(pt.revenue) || 0,
   }));
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Analytics Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
+          <Heading as="h1" size="xl" weight="semibold">
+            Analytics Dashboard
+          </Heading>
+          <Text size="sm" variant="muted" className="mt-0.5">
             {activeStore
               ? `Active Outlet: ${activeStore.code} — ${activeStore.name} (${activeStore.timezone})`
               : "Role-based operational & financial overview"}
-          </p>
+          </Text>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          {(["owner", "manager", "cashier"] as const).map((r) => (
-            <Button
-              key={r}
-              size="sm"
-              variant={roleView === r ? "default" : "outline"}
-              onClick={() => setRoleView(r)}
-            >
-              {r === "owner" ? "Owner" : r === "manager" ? "Store Manager" : "Cashier"}
-            </Button>
-          ))}
-          <DatePicker
+          <SegmentedControl
+            type="single"
+            variant="segmented"
+            size="sm"
+            value={roleView}
+            onValueChange={(val) => {
+              if (val === "owner" || val === "manager" || val === "cashier") {
+                setRoleView(val);
+              }
+            }}
+          >
+            <SegmentedControlItem value="owner">Owner</SegmentedControlItem>
+            <SegmentedControlItem value="manager">Store Manager</SegmentedControlItem>
+            <SegmentedControlItem value="cashier">Cashier</SegmentedControlItem>
+          </SegmentedControl>
+
+          <IsoDatePicker
             value={dateFrom}
             onChange={setDateFrom}
             placeholder="From date"
             allowClear
-            className="h-9 w-40 text-xs"
+            size="sm"
+            className="w-40"
           />
-          <DatePicker
+          <IsoDatePicker
             value={dateTo}
             onChange={setDateTo}
             placeholder="To date"
             allowClear
-            className="h-9 w-40 text-xs"
+            size="sm"
+            className="w-40"
           />
+
           {!user && (
-            <Link href="/login">
-              <Button size="sm">
-                Sign In <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
+            <Button asChild size="sm" variant="solid" color="primary" rightIcon={<ArrowRight className="h-4 w-4" />}>
+              <Link href="/login">Sign In</Link>
+            </Button>
           )}
         </div>
       </div>
@@ -110,90 +119,67 @@ export default function DashboardHomePage() {
       {dashboardQuery.isLoading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[1, 2, 3, 4].map((n) => (
-            <div key={n} className="h-28 animate-pulse rounded-xl bg-muted" />
+            <Skeleton key={n} variant="rounded" height={112} />
           ))}
         </div>
       ) : roleView === "cashier" ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                My Sales Total
-              </CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-mono">
+        <StatGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat
+            variant="surface"
+            label="My Sales Total"
+            value={
+              <span className="font-mono">
                 {formatCurrency(String(data?.kpis.my_sales_total ?? "0"))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                My Transactions
-              </CardTitle>
-              <Receipt className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-mono">
-                {String(data?.kpis.my_transaction_count ?? 0)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Held Carts
-              </CardTitle>
-              <BarChart3 className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-mono">
-                {String(data?.kpis.held_transactions ?? 0)}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Cash Register
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <Badge variant={data?.kpis.has_open_register ? "success" : "warning"}>
+              </span>
+            }
+            icon={<DollarSign className="h-4 w-4" />}
+          />
+          <Stat
+            variant="surface"
+            label="My Transactions"
+            value={<span className="font-mono">{String(data?.kpis.my_transaction_count ?? 0)}</span>}
+            icon={<Receipt className="h-4 w-4" />}
+          />
+          <Stat
+            variant="surface"
+            label="Held Carts"
+            value={<span className="font-mono">{String(data?.kpis.held_transactions ?? 0)}</span>}
+            icon={<BarChart3 className="h-4 w-4" />}
+          />
+          <Stat
+            variant="surface"
+            label="Cash Register"
+            value={
+              <Badge
+                variant="soft"
+                color={data?.kpis.has_open_register ? "success" : "warning"}
+                size="md"
+              >
                 {data?.kpis.has_open_register ? "Session Open" : "Closed"}
               </Badge>
-            </CardContent>
-          </Card>
-        </div>
+            }
+            icon={<TrendingUp className="h-4 w-4" />}
+          />
+        </StatGroup>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">Net Sales</CardTitle>
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-mono">
+        <StatGroup className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Stat
+            variant="surface"
+            label="Net Sales"
+            value={
+              <span className="font-mono">
                 {formatCurrency(String(data?.kpis.net_sales ?? "0"))}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">
-                {String(data?.kpis.transaction_count ?? 0)} transactions
-              </p>
-            </CardContent>
-          </Card>
+              </span>
+            }
+            helpText={`${String(data?.kpis.transaction_count ?? 0)} transactions`}
+            icon={<DollarSign className="h-4 w-4" />}
+          />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {roleView === "owner" ? "Net Profit" : "Avg Basket"}
-              </CardTitle>
-              <TrendingUp className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-mono">
+          <Stat
+            variant="surface"
+            label={roleView === "owner" ? "Net Profit" : "Avg Basket"}
+            value={
+              <span className="font-mono">
                 {formatCurrency(
                   String(
                     roleView === "owner"
@@ -201,101 +187,91 @@ export default function DashboardHomePage() {
                       : (data?.kpis.average_basket ?? "0")
                   )
                 )}
-              </div>
-              {roleView === "owner" && (
-                <p className="text-xs text-muted-foreground mt-1">
-                  Gross Profit: {formatCurrency(String(data?.kpis.gross_profit ?? "0"))}
-                </p>
-              )}
-            </CardContent>
-          </Card>
+              </span>
+            }
+            helpText={
+              roleView === "owner"
+                ? `Gross Profit: ${formatCurrency(String(data?.kpis.gross_profit ?? "0"))}`
+                : undefined
+            }
+            icon={<TrendingUp className="h-4 w-4" />}
+          />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {roleView === "owner" ? "Operating Expenses" : "Pending Expenses"}
-              </CardTitle>
-              <Receipt className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-mono">
+          <Stat
+            variant="surface"
+            label={roleView === "owner" ? "Operating Expenses" : "Pending Expenses"}
+            value={
+              <span className="font-mono">
                 {roleView === "owner"
                   ? formatCurrency(String(data?.kpis.total_expenses ?? "0"))
                   : String(data?.kpis.pending_expenses ?? 0)}
-              </div>
-            </CardContent>
-          </Card>
+              </span>
+            }
+            icon={<Receipt className="h-4 w-4" />}
+          />
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                Low Stock Alerts
-              </CardTitle>
-              <AlertTriangle className="h-4 w-4 text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold font-mono">
-                {String(data?.kpis.low_stock_count ?? 0)}
-              </div>
-              <p className="text-xs text-muted-foreground mt-1">SKUs at or below reorder point</p>
-            </CardContent>
-          </Card>
-        </div>
+          <Stat
+            variant="surface"
+            label="Low Stock Alerts"
+            value={<span className="font-mono">{String(data?.kpis.low_stock_count ?? 0)}</span>}
+            helpText="SKUs at or below reorder point"
+            icon={<AlertTriangle className="h-4 w-4 text-eta-warning" />}
+          />
+        </StatGroup>
       )}
 
       {roleView !== "cashier" && (
         <div className="grid gap-6 lg:grid-cols-3">
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>Daily Revenue Trend</CardTitle>
-              <CardDescription>
-                {data?.period ? `${data.period.from} to ${data.period.to}` : "Last 30 days"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {chartData.length === 0 ? (
-                <div className="flex h-64 items-center justify-center text-sm text-muted-foreground">
-                  No sales data for the selected period.
-                </div>
-              ) : (
-                <ChartContainer config={revenueChartConfig} className="h-64 w-full">
-                  <BarChart accessibilityLayer data={chartData}>
-                    <CartesianGrid vertical={false} />
-                    <XAxis dataKey="date" tickLine={false} tickMargin={8} axisLine={false} />
-                    <YAxis tickLine={false} axisLine={false} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="revenue" fill="var(--color-revenue)" radius={4} />
-                  </BarChart>
-                </ChartContainer>
-              )}
-            </CardContent>
-          </Card>
+          <div className="lg:col-span-2">
+            <BarChart
+              title="Daily Revenue Trend"
+              description={data?.period ? `${data.period.from} to ${data.period.to}` : "Last 30 days"}
+              data={chartData}
+              indexKey="date"
+              series={[{ key: "revenue", label: "Revenue", color: "primary" }]}
+              height={260}
+              variant="surface"
+              valueFormatter={(value) => formatCurrency(value)}
+              isLoading={dashboardQuery.isLoading}
+              emptyState={
+                <EmptyState
+                  size="sm"
+                  title="No sales data"
+                  description="No sales data for the selected period."
+                />
+              }
+            />
+          </div>
 
-          <Card>
+          <Card variant="elevated" padding="md">
             <CardHeader>
               <CardTitle>Top Products</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardBody>
               {(data?.top_products ?? []).length === 0 ? (
-                <p className="text-sm text-muted-foreground">No product sales yet.</p>
+                <EmptyState
+                  size="sm"
+                  title="No product sales yet"
+                  description="Completed transactions will appear here."
+                />
               ) : (
-                <div className="divide-y divide-border">
+                <div className="divide-y divide-eta-border">
                   {(data?.top_products ?? []).map((item) => (
                     <div key={item.sku} className="flex items-center justify-between py-2.5 text-xs">
                       <div>
-                        <div className="font-medium">{item.name}</div>
-                        <div className="font-mono text-muted-foreground">
+                        <div className="font-medium text-eta-heading">{item.name}</div>
+                        <div className="font-mono text-eta-muted">
                           {item.sku} • Qty {Number.parseFloat(item.total_qty)}
                         </div>
                       </div>
-                      <div className="font-mono font-semibold">
+                      <div className="font-mono font-semibold text-eta-heading">
                         {formatCurrency(item.total_revenue)}
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </CardContent>
+            </CardBody>
           </Card>
         </div>
       )}

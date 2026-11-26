@@ -3,24 +3,31 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
-import { apiFetch, ApiError } from "@/lib/api";
-import type { RoleItem } from "@/lib/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+  Checkbox,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+  Skeleton,
+  useToast,
+} from "@eta-ui/react";
+import { apiFetch, ApiError } from "@/lib/api";
+import type { RoleItem } from "@/lib/types";
 
 export default function RolesPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [editingRole, setEditingRole] = useState<RoleItem | null>(null);
   const [selectedPerms, setSelectedPerms] = useState<string[]>([]);
 
@@ -67,16 +74,18 @@ export default function RolesPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Roles &amp; Permissions</h1>
-        <p className="text-sm text-muted-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight text-eta-heading">
+          Roles &amp; Permissions
+        </h1>
+        <p className="text-sm text-eta-muted">
           Manage enterprise roles and synchronize granular module permissions.
         </p>
       </div>
 
       {rolesQuery.isLoading ? (
         <div className="grid gap-4 md:grid-cols-2">
-          <div className="h-36 animate-pulse rounded-xl bg-muted" />
-          <div className="h-36 animate-pulse rounded-xl bg-muted" />
+          <Skeleton variant="rounded" height={144} />
+          <Skeleton variant="rounded" height={144} />
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
@@ -95,47 +104,62 @@ export default function RolesPage() {
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardBody>
                 <div className="flex flex-wrap gap-1.5">
                   {role.permissions.slice(0, 12).map((perm) => (
-                    <Badge key={perm} variant="default">
+                    <Badge key={perm} variant="soft" color="primary" size="sm">
                       {perm}
                     </Badge>
                   ))}
                   {role.permissions.length > 12 && (
-                    <Badge variant="muted">+{role.permissions.length - 12} more</Badge>
+                    <Badge variant="soft" color="neutral" size="sm">
+                      +{role.permissions.length - 12} more
+                    </Badge>
                   )}
                 </div>
-              </CardContent>
+              </CardBody>
             </Card>
           ))}
         </div>
       )}
 
       <Dialog open={Boolean(editingRole)} onOpenChange={(o) => !o && setEditingRole(null)}>
-        <DialogContent className="sm:max-w-2xl">
+        <DialogContent size="xl">
           <DialogHeader>
             <DialogTitle>Edit Permissions — {editingRole?.name}</DialogTitle>
             <DialogDescription>
               Select the permissions assigned to this role ({selectedPerms.length} selected).
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-2 sm:grid-cols-2 max-h-80 overflow-y-auto rounded-lg border border-border p-3">
-            {allPermissions.map((perm) => (
-              <label key={perm} className="flex items-center gap-2 text-xs cursor-pointer">
-                <Checkbox
-                  checked={selectedPerms.includes(perm)}
-                  onCheckedChange={() => togglePerm(perm)}
-                />
-                <span className="font-mono">{perm}</span>
-              </label>
-            ))}
-          </div>
+          <DialogBody>
+            <div className="grid gap-2 sm:grid-cols-2 max-h-80 overflow-y-auto rounded-lg border border-eta-border p-3">
+              {allPermissions.map((perm) => (
+                <label key={perm} className="flex items-center gap-2 text-xs cursor-pointer">
+                  <Checkbox
+                    size="sm"
+                    checked={selectedPerms.includes(perm)}
+                    onCheckedChange={(v) => {
+                      if (Boolean(v) !== selectedPerms.includes(perm)) {
+                        togglePerm(perm);
+                      }
+                    }}
+                  />
+                  <span className="font-mono">{perm}</span>
+                </label>
+              ))}
+            </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditingRole(null)}>
               Cancel
             </Button>
-            <Button disabled={syncMutation.isPending} onClick={() => syncMutation.mutate()}>
+            <Button
+              variant="solid"
+              color="primary"
+              isLoading={syncMutation.isPending}
+              disabled={syncMutation.isPending}
+              onClick={() => syncMutation.mutate()}
+            >
               Save Permissions
             </Button>
           </DialogFooter>

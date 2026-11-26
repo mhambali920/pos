@@ -1,4 +1,4 @@
-export { cn } from "cn";
+export { cn } from "@eta-ui/react";
 
 export function formatCurrency(
   amount: number | string,

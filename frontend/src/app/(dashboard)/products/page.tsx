@@ -3,35 +3,52 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { apiFetch, ApiError } from "@/lib/api";
-import type { ProductItem } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { Package, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import {
+  Alert,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  Heading,
+  IconButton,
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
+  Skeleton,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+  Text,
+  useToast,
+} from "@eta-ui/react";
+import { apiFetch, ApiError } from "@/lib/api";
+import type { ProductItem } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
 export default function ProductsPage() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
+  const [deleteTarget, setDeleteTarget] = useState<ProductItem | null>(null);
 
   const productsQuery = useQuery({
     queryKey: ["products", search, typeFilter],
@@ -48,6 +65,7 @@ export default function ProductsPage() {
     mutationFn: (id: number) => apiFetch(`/products/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Product archived.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({ queryKey: ["products"] });
     },
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Delete failed."),
@@ -59,22 +77,22 @@ export default function ProductsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Products</h1>
-          <p className="text-sm text-muted-foreground">
+          <Heading as="h1" size="xl" weight="semibold">
+            Products
+          </Heading>
+          <Text size="sm" variant="muted" className="mt-0.5">
             Master catalog supporting standard, variant, bundle, service, and non-stock products.
-          </p>
+          </Text>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-60">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search name, SKU, barcode..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+          <Input
+            placeholder="Search name, SKU, barcode..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            leftAdornment={<Search className="h-4 w-4" />}
+            wrapperClassName="w-60"
+          />
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? "all")}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="All Types" />
@@ -88,34 +106,52 @@ export default function ProductsPage() {
               <SelectItem value="non_stock">Non-Stock</SelectItem>
             </SelectContent>
           </Select>
-          <Link href="/products/new">
-            <Button>
-              <Plus className="h-4 w-4" /> Add Product
-            </Button>
-          </Link>
+          <Button asChild variant="solid" color="primary" leftIcon={<Plus className="h-4 w-4" />}>
+            <Link href="/products/new">Add Product</Link>
+          </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card variant="elevated" padding="none">
+        <CardHeader className="px-6 pt-5 pb-3">
           <CardTitle>Product Catalog</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardBody className="p-0">
           {productsQuery.isLoading ? (
-            <div className="space-y-3">
-              <div className="h-12 animate-pulse rounded-md bg-muted" />
-              <div className="h-12 animate-pulse rounded-md bg-muted" />
+            <div className="space-y-3 p-6">
+              <Skeleton variant="rounded" height={48} />
+              <Skeleton variant="rounded" height={48} />
+              <Skeleton variant="rounded" height={48} />
             </div>
           ) : productsQuery.isError ? (
-            <p className="text-sm text-destructive">
-              {productsQuery.error instanceof Error
-                ? productsQuery.error.message
-                : "Failed to load products."}
-            </p>
+            <div className="p-6">
+              <Alert
+                status="error"
+                variant="soft"
+                title="Failed to load products"
+                description={
+                  productsQuery.error instanceof Error
+                    ? productsQuery.error.message
+                    : "An unexpected error occurred."
+                }
+              />
+            </div>
           ) : products.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No products found.</p>
+            <div className="p-6">
+              <EmptyState
+                variant="bordered"
+                icon={<Package className="h-6 w-6" />}
+                title="No products found"
+                description="Try adjusting your search or filter, or add a new product to the catalog."
+                action={
+                  <Button asChild variant="solid" color="primary" size="sm">
+                    <Link href="/products/new">Add Product</Link>
+                  </Button>
+                }
+              />
+            </div>
           ) : (
-            <Table>
+            <Table variant="hoverable">
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
@@ -123,7 +159,7 @@ export default function ProductsPage() {
                   <TableHead>Primary SKU</TableHead>
                   <TableHead>Selling Price</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead align="right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -141,11 +177,11 @@ export default function ProductsPage() {
                                 e.currentTarget.src = "/images/products/placeholder.svg";
                               }
                             }}
-                            className="h-10 w-12 rounded-md border border-border object-cover shrink-0"
+                            className="h-10 w-12 shrink-0 rounded-md border border-eta-border object-cover"
                           />
                           <div>
-                            <div className="font-medium">{product.name}</div>
-                            <div className="text-xs text-muted-foreground">
+                            <div className="font-medium text-eta-heading">{product.name}</div>
+                            <div className="text-xs text-eta-muted">
                               {product.category?.name ?? "Uncategorized"}
                               {product.variants.length > 1
                                 ? ` • ${product.variants.length} variants`
@@ -155,32 +191,36 @@ export default function ProductsPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="muted">{product.product_type}</Badge>
+                        <Badge variant="soft" color="neutral">
+                          {product.product_type}
+                        </Badge>
                       </TableCell>
                       <TableCell className="font-mono text-xs">{primary?.sku ?? "—"}</TableCell>
-                      <TableCell className="font-medium font-mono">
+                      <TableCell className="font-mono font-medium">
                         {primary ? formatCurrency(primary.selling_price) : "—"}
                       </TableCell>
                       <TableCell>
-                        <Badge variant={product.is_active ? "success" : "muted"}>
+                        <Badge variant="soft" color={product.is_active ? "success" : "neutral"}>
                           {product.is_active ? "Active" : "Inactive"}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right">
+                      <TableCell align="right">
                         <div className="inline-flex items-center gap-1">
                           <Link href={`/products/${product.id}/edit`}>
-                            <Button size="icon" variant="ghost" aria-label="Edit product">
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <IconButton
+                              icon={<Pencil className="h-4 w-4" />}
+                              variant="ghost"
+                              size="sm"
+                              aria-label="Edit product"
+                            />
                           </Link>
-                          <Button
-                            size="icon"
+                          <IconButton
+                            icon={<Trash2 className="h-4 w-4 text-eta-danger" />}
                             variant="ghost"
+                            size="sm"
                             aria-label="Delete product"
-                            onClick={() => deleteMutation.mutate(product.id)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                            onClick={() => setDeleteTarget(product)}
+                          />
                         </div>
                       </TableCell>
                     </TableRow>
@@ -189,8 +229,38 @@ export default function ProductsPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
+        </CardBody>
       </Card>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent intent="danger">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Archive Product</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to archive{" "}
+              <span className="font-medium text-eta-heading">{deleteTarget?.name}</span>? This will
+              hide the product from active catalog listings.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Cancel</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                variant="solid"
+                color="danger"
+                isLoading={deleteMutation.isPending}
+                onClick={() => {
+                  if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+                }}
+              >
+                Archive
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

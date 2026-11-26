@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
+import { Alert, Skeleton } from "@eta-ui/react";
 import { apiFetch } from "@/lib/api";
 import type { ProductItem } from "@/lib/types";
 import { ProductForm } from "@/components/products/product-form";
@@ -20,19 +21,22 @@ function EditProductContent() {
   if (productQuery.isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-10 w-64 animate-pulse rounded-lg bg-muted" />
-        <div className="h-96 animate-pulse rounded-xl bg-muted" />
+        <Skeleton variant="rounded" height={40} className="w-64" />
+        <Skeleton variant="rounded" height={384} />
       </div>
     );
   }
 
   if (productQuery.isError || !productQuery.data?.data) {
     return (
-      <p className="text-sm text-destructive">
-        {productQuery.error instanceof Error
-          ? productQuery.error.message
-          : "Product not found."}
-      </p>
+      <Alert
+        status="error"
+        variant="soft"
+        title="Failed to load product"
+        description={
+          productQuery.error instanceof Error ? productQuery.error.message : "Product not found."
+        }
+      />
     );
   }
 
@@ -44,8 +48,8 @@ export default function EditProductPage() {
     <Suspense
       fallback={
         <div className="space-y-4">
-          <div className="h-10 w-64 animate-pulse rounded-lg bg-muted" />
-          <div className="h-96 animate-pulse rounded-xl bg-muted" />
+          <Skeleton variant="rounded" height={40} className="w-64" />
+          <Skeleton variant="rounded" height={384} />
         </div>
       }
     >

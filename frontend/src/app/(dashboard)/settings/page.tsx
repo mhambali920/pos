@@ -3,25 +3,35 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Pencil, Plus, Save } from "lucide-react";
-import { toast } from "sonner";
-import { apiFetch, ApiError } from "@/lib/api";
-import type { StoreSummary } from "@/lib/types";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
 import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardDescription,
+  CardHeader,
+  CardTitle,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
+  EmptyState,
+  FormField,
+  FormLabel,
+  IconButton,
+  Input,
+  Skeleton,
+  Switch,
+  useToast,
+} from "@eta-ui/react";
+import { apiFetch, ApiError } from "@/lib/api";
+import type { StoreSummary } from "@/lib/types";
 
 export default function SettingsPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   const [storeDialogOpen, setStoreDialogOpen] = useState(false);
   const [editingStore, setEditingStore] = useState<StoreSummary | null>(null);
@@ -101,12 +111,14 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Settings &amp; Outlets</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="text-2xl font-semibold tracking-tight text-eta-heading">
+            Settings &amp; Outlets
+          </h1>
+          <p className="text-sm text-eta-muted">
             Configure stores/outlets, inventory policy flags, and global POS preferences.
           </p>
         </div>
-        <Button onClick={openCreateStore}>
+        <Button variant="solid" color="primary" onClick={openCreateStore}>
           <Plus className="h-4 w-4" /> Add Outlet
         </Button>
       </div>
@@ -116,45 +128,55 @@ export default function SettingsPage() {
           <CardTitle>Stores / Outlets</CardTitle>
           <CardDescription>Outlets accessible by your account.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardBody>
           {storesQuery.isLoading ? (
-            <div className="h-24 animate-pulse rounded-md bg-muted" />
+            <Skeleton variant="rounded" height={96} />
           ) : stores.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No stores configured.</p>
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No stores configured."
+              description="Add an outlet to configure store policies."
+            />
           ) : (
-            <div className="divide-y divide-border">
+            <div className="divide-y divide-eta-border">
               {stores.map((store) => (
                 <div
                   key={store.id}
                   className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div>
-                    <div className="font-medium">
+                    <div className="font-medium text-eta-heading">
                       {store.code} — {store.name}
                     </div>
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs text-eta-muted">
                       Timezone: {store.timezone} {store.address ? `• ${store.address}` : ""}
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant={store.allow_negative_stock ? "warning" : "success"}>
+                    <Badge
+                      variant="soft"
+                      color={store.allow_negative_stock ? "warning" : "success"}
+                      size="sm"
+                    >
                       {store.allow_negative_stock ? "Negative Stock Allowed" : "Strict Stock Guard"}
                     </Badge>
-                    <Badge variant="muted">{store.status ?? "active"}</Badge>
-                    <Button
-                      size="icon"
+                    <Badge variant="soft" color="neutral" size="sm">
+                      {store.status ?? "active"}
+                    </Badge>
+                    <IconButton
+                      icon={<Pencil className="h-4 w-4" />}
+                      size="sm"
                       variant="ghost"
                       aria-label="Edit store"
                       onClick={() => openEditStore(store)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
+                    />
                   </div>
                 </div>
               ))}
             </div>
           )}
-        </CardContent>
+        </CardBody>
       </Card>
 
       <Card>
@@ -162,60 +184,68 @@ export default function SettingsPage() {
           <CardTitle>System Preferences</CardTitle>
           <CardDescription>Organization-level POS &amp; receipt defaults.</CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label>Currency Symbol</Label>
+        <CardBody className="grid gap-4 sm:grid-cols-2">
+          <FormField label="Currency Symbol">
             <Input value={currencySymbol} onChange={(e) => setCurrencySymbol(e.target.value)} />
-          </div>
-          <div className="space-y-1.5">
-            <Label>Default Receipt Footer</Label>
+          </FormField>
+          <FormField label="Default Receipt Footer">
             <Input value={receiptFooter} onChange={(e) => setReceiptFooter(e.target.value)} />
-          </div>
+          </FormField>
           <div className="sm:col-span-2 flex justify-end">
             <Button
+              variant="solid"
+              color="primary"
+              isLoading={saveSettingsMutation.isPending}
               disabled={saveSettingsMutation.isPending}
               onClick={() => saveSettingsMutation.mutate()}
             >
               <Save className="h-4 w-4" /> Save Settings
             </Button>
           </div>
-        </CardContent>
+        </CardBody>
       </Card>
 
       <Dialog open={storeDialogOpen} onOpenChange={setStoreDialogOpen}>
-        <DialogContent>
+        <DialogContent size="md">
           <DialogHeader>
             <DialogTitle>{editingStore ? "Edit Outlet" : "Add New Outlet"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
+          <DialogBody className="space-y-3">
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Store Code</Label>
+              <FormField label="Store Code">
                 <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="STR-002" />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Timezone</Label>
+              </FormField>
+              <FormField label="Timezone">
                 <Input value={timezone} onChange={(e) => setTimezone(e.target.value)} />
-              </div>
+              </FormField>
             </div>
-            <div className="space-y-1.5">
-              <Label>Store Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Branch Bandung" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Address</Label>
+            <FormField label="Store Name">
+              <Input
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Branch Bandung"
+              />
+            </FormField>
+            <FormField label="Address">
               <Input value={address} onChange={(e) => setAddress(e.target.value)} />
+            </FormField>
+            <div className="flex items-center justify-between rounded-lg border border-eta-border p-3">
+              <FormLabel htmlFor="allow-negative-stock">Allow Negative Stock</FormLabel>
+              <Switch
+                id="allow-negative-stock"
+                checked={allowNegativeStock}
+                onCheckedChange={setAllowNegativeStock}
+              />
             </div>
-            <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <Label>Allow Negative Stock</Label>
-              <Switch checked={allowNegativeStock} onCheckedChange={setAllowNegativeStock} />
-            </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setStoreDialogOpen(false)}>
               Cancel
             </Button>
             <Button
+              variant="solid"
+              color="primary"
+              isLoading={saveStoreMutation.isPending}
               disabled={saveStoreMutation.isPending || !code.trim() || !name.trim()}
               onClick={() => saveStoreMutation.mutate()}
             >

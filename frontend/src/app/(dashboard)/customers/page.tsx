@@ -2,47 +2,63 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Award, Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { apiFetch, ApiError } from "@/lib/api";
-import type { CustomerItem } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Award, Pencil, Plus, Search, Trash2, Users } from "lucide-react";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import {
+  EmptyState,
+  FormField,
+  FormLabel,
+  Heading,
+  IconButton,
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import {
+  Skeleton,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+  Text,
+  useToast,
+} from "@eta-ui/react";
+import { apiFetch, ApiError } from "@/lib/api";
+import type { CustomerItem } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
 export default function CustomersPage() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CustomerItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CustomerItem | null>(null);
   const [code, setCode] = useState("");
   const [name, setName] = useState("");
   const [customerType, setCustomerType] = useState("registered");
@@ -118,6 +134,7 @@ export default function CustomersPage() {
     mutationFn: (id: number) => apiFetch(`/customers/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Customer deleted.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Delete failed."),
@@ -150,21 +167,22 @@ export default function CustomersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Customers</h1>
-          <p className="text-sm text-muted-foreground">
-            Manage walk-in, registered, member, and wholesale customers with loyalty &amp; credit limits.
-          </p>
+          <Heading as="h1" size="xl" weight="semibold">
+            Customers
+          </Heading>
+          <Text size="sm" variant="muted" className="mt-0.5">
+            Manage walk-in, registered, member, and wholesale customers with loyalty &amp; credit
+            limits.
+          </Text>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-60">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search name, code, phone..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
+          <Input
+            placeholder="Search name, code, phone..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            leftAdornment={<Search className="h-4 w-4" />}
+            wrapperClassName="w-60"
+          />
           <Select value={typeFilter} onValueChange={(v) => setTypeFilter(v ?? "all")}>
             <SelectTrigger className="w-36">
               <SelectValue placeholder="All Types" />
@@ -177,23 +195,44 @@ export default function CustomersPage() {
               <SelectItem value="wholesale">Wholesale</SelectItem>
             </SelectContent>
           </Select>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4" /> Add Customer
+          <Button
+            variant="solid"
+            color="primary"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={openCreate}
+          >
+            Add Customer
           </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card variant="elevated" padding="none">
+        <CardHeader className="px-6 pt-5 pb-3">
           <CardTitle>Customer Directory</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardBody className="p-0">
           {customersQuery.isLoading ? (
-            <div className="h-24 animate-pulse rounded-md bg-muted" />
+            <div className="space-y-3 p-6">
+              <Skeleton variant="rounded" height={48} />
+              <Skeleton variant="rounded" height={48} />
+              <Skeleton variant="rounded" height={48} />
+            </div>
           ) : customers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No customers found.</p>
+            <div className="p-6">
+              <EmptyState
+                variant="bordered"
+                icon={<Users className="h-6 w-6" />}
+                title="No customers found"
+                description="Try adjusting your search or filter, or add a new customer."
+                action={
+                  <Button variant="solid" color="primary" size="sm" onClick={openCreate}>
+                    Add Customer
+                  </Button>
+                }
+              />
+            </div>
           ) : (
-            <Table>
+            <Table variant="hoverable">
               <TableHeader>
                 <TableRow>
                   <TableHead>Code</TableHead>
@@ -201,7 +240,7 @@ export default function CustomersPage() {
                   <TableHead>Type</TableHead>
                   <TableHead>Loyalty</TableHead>
                   <TableHead>Credit Limit</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead align="right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -209,42 +248,41 @@ export default function CustomersPage() {
                   <TableRow key={c.id}>
                     <TableCell className="font-mono text-xs">{c.code}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{c.name}</div>
-                      <div className="text-xs text-muted-foreground">{c.phone ?? c.email ?? "—"}</div>
+                      <div className="font-medium text-eta-heading">{c.name}</div>
+                      <div className="text-xs text-eta-muted">{c.phone ?? c.email ?? "—"}</div>
                     </TableCell>
                     <TableCell>
-                      <Badge>{c.customer_type}</Badge>
+                      <Badge variant="solid" color="primary">
+                        {c.customer_type}
+                      </Badge>
                     </TableCell>
                     <TableCell className="font-mono">{c.loyalty_points} pts</TableCell>
-                    <TableCell className="font-medium font-mono">
+                    <TableCell className="font-mono font-medium">
                       {formatCurrency(c.credit_limit)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell align="right">
                       <div className="inline-flex items-center gap-1">
-                        <Button
-                          size="icon"
+                        <IconButton
+                          icon={<Award className="h-4 w-4 text-eta-warning" />}
                           variant="ghost"
+                          size="sm"
                           aria-label="Adjust loyalty points"
                           onClick={() => setLoyaltyCustomer(c)}
-                        >
-                          <Award className="h-4 w-4 text-amber-600" />
-                        </Button>
-                        <Button
-                          size="icon"
+                        />
+                        <IconButton
+                          icon={<Pencil className="h-4 w-4" />}
                           variant="ghost"
+                          size="sm"
                           aria-label="Edit customer"
                           onClick={() => openEdit(c)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
+                        />
+                        <IconButton
+                          icon={<Trash2 className="h-4 w-4 text-eta-danger" />}
                           variant="ghost"
+                          size="sm"
                           aria-label="Delete customer"
-                          onClick={() => deleteMutation.mutate(c.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                          onClick={() => setDeleteTarget(c)}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -252,7 +290,7 @@ export default function CustomersPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
+        </CardBody>
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -260,13 +298,16 @@ export default function CustomersPage() {
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Customer" : "Add Customer"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3 py-2 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Code</Label>
-              <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="CUST-001" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Type</Label>
+          <DialogBody className="grid gap-3 sm:grid-cols-2">
+            <FormField label="Code">
+              <Input
+                id="cust-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="CUST-001"
+              />
+            </FormField>
+            <FormField label="Type">
               <Select value={customerType} onValueChange={(v) => setCustomerType(v ?? "registered")}>
                 <SelectTrigger className="w-full">
                   <SelectValue />
@@ -278,39 +319,54 @@ export default function CustomersPage() {
                   <SelectItem value="wholesale">Wholesale</SelectItem>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="sm:col-span-2 space-y-1.5">
-              <Label>Full Name</Label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Customer Name" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Phone</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="0812..." />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Credit Limit</Label>
+            </FormField>
+            <FormField label="Full Name" className="sm:col-span-2">
               <Input
+                id="cust-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Customer Name"
+              />
+            </FormField>
+            <FormField label="Phone">
+              <Input
+                id="cust-phone"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0812..."
+              />
+            </FormField>
+            <FormField label="Email">
+              <Input
+                id="cust-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </FormField>
+            <FormField label="Credit Limit">
+              <Input
+                id="cust-credit"
                 type="number"
                 min="0"
                 value={creditLimit}
                 onChange={(e) => setCreditLimit(e.target.value)}
               />
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <Label>Active</Label>
+            </FormField>
+            <div className="flex items-center justify-between rounded-lg border border-eta-border p-3">
+              <FormLabel>Active</FormLabel>
               <Switch checked={isActive} onCheckedChange={setIsActive} />
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
             <Button
-              disabled={saveMutation.isPending || !code.trim() || !name.trim()}
+              variant="solid"
+              color="primary"
+              isLoading={saveMutation.isPending}
+              disabled={!code.trim() || !name.trim()}
               onClick={() => saveMutation.mutate()}
             >
               Save
@@ -324,16 +380,15 @@ export default function CustomersPage() {
           <DialogHeader>
             <DialogTitle>Loyalty Points — {loyaltyCustomer?.name}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <div className="text-xs text-muted-foreground">
+          <DialogBody className="space-y-3">
+            <div className="text-xs text-eta-muted">
               Current Balance:{" "}
-              <span className="font-mono font-semibold text-foreground">
+              <span className="font-mono font-semibold text-eta-heading">
                 {loyaltyCustomer?.loyalty_points ?? 0} pts
               </span>
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label>Action</Label>
+              <FormField label="Action">
                 <Select value={loyaltyType} onValueChange={(v) => setLoyaltyType(v ?? "earn")}>
                   <SelectTrigger className="w-full">
                     <SelectValue />
@@ -344,31 +399,34 @@ export default function CustomersPage() {
                     <SelectItem value="adjust">Manual Adjust</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Points</Label>
+              </FormField>
+              <FormField label="Points">
                 <Input
+                  id="loyalty-pts"
                   type="number"
                   value={loyaltyPoints}
                   onChange={(e) => setLoyaltyPoints(e.target.value)}
                 />
-              </div>
+              </FormField>
             </div>
-            <div className="space-y-1.5">
-              <Label>Notes</Label>
+            <FormField label="Notes">
               <Input
+                id="loyalty-notes"
                 placeholder="Reason for points update"
                 value={loyaltyNotes}
                 onChange={(e) => setLoyaltyNotes(e.target.value)}
               />
-            </div>
-          </div>
+            </FormField>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setLoyaltyCustomer(null)}>
               Cancel
             </Button>
             <Button
-              disabled={loyaltyMutation.isPending || loyaltyNotes.trim().length < 3}
+              variant="solid"
+              color="primary"
+              isLoading={loyaltyMutation.isPending}
+              disabled={loyaltyNotes.trim().length < 3}
               onClick={() => loyaltyMutation.mutate()}
             >
               Update Points
@@ -376,6 +434,35 @@ export default function CustomersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent intent="danger">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Customer</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-medium text-eta-heading">{deleteTarget?.name}</span>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Cancel</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                variant="solid"
+                color="danger"
+                isLoading={deleteMutation.isPending}
+                onClick={() => {
+                  if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+                }}
+              >
+                Delete
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

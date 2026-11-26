@@ -3,25 +3,42 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { toast } from "sonner";
-import { apiFetch, ApiError } from "@/lib/api";
-import type { BrandItem, CategoryItem, TaxItem, UnitItem, WarehouseItem } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
+  EmptyState,
+  FormField,
+  Heading,
+  Input,
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+  Skeleton,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tabs,
+  TabsList,
+  TabsTrigger,
+  Text,
+  useToast,
+} from "@eta-ui/react";
+import { apiFetch, ApiError } from "@/lib/api";
+import type { BrandItem, CategoryItem, TaxItem, UnitItem, WarehouseItem } from "@/lib/types";
 
 type TabKey = "categories" | "brands" | "units" | "taxes" | "warehouses";
 
 export default function CategoriesAndCatalogConfigPage() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<TabKey>("categories");
   const [code, setCode] = useState("");
@@ -91,33 +108,39 @@ export default function CategoriesAndCatalogConfigPage() {
     { key: "warehouses", label: "Warehouses" },
   ];
 
+  const isLoading =
+    (tab === "categories" && categoriesQuery.isLoading) ||
+    (tab === "brands" && brandsQuery.isLoading) ||
+    (tab === "units" && unitsQuery.isLoading) ||
+    (tab === "taxes" && taxesQuery.isLoading) ||
+    (tab === "warehouses" && warehousesQuery.isLoading);
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Catalog Setup</h1>
-        <p className="text-sm text-muted-foreground">
+        <Heading as="h1" size="xl" weight="semibold">
+          Catalog Setup
+        </Heading>
+        <Text size="sm" variant="muted" className="mt-0.5">
           Manage product categories, brands, units of measurement, taxes, and warehouses.
-        </p>
+        </Text>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        {tabs.map((t) => (
-          <Button
-            key={t.key}
-            variant={tab === t.key ? "default" : "outline"}
-            size="sm"
-            onClick={() => setTab(t.key)}
-          >
-            {t.label}
-          </Button>
-        ))}
-      </div>
+      <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} variant="underline">
+        <TabsList>
+          {tabs.map((t) => (
+            <TabsTrigger key={t.key} value={t.key}>
+              {t.label}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
-      <Card>
+      <Card variant="elevated" padding="md">
         <CardHeader>
-          <CardTitle>Quick Create ({tab})</CardTitle>
+          <CardTitle className="capitalize">Quick Create ({tab})</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardBody>
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -126,27 +149,34 @@ export default function CategoriesAndCatalogConfigPage() {
             }}
             className="flex flex-wrap items-end gap-3"
           >
-            <div className="w-36 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Code</label>
-              <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="CODE-01" />
-            </div>
-            <div className="min-w-52 flex-1 space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Name</label>
-              <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Display name" />
-            </div>
+            <FormField label="Code" className="w-36">
+              <Input
+                id="catalog-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="CODE-01"
+              />
+            </FormField>
+            <FormField label="Name" className="min-w-52 flex-1">
+              <Input
+                id="catalog-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Display name"
+              />
+            </FormField>
             {tab === "taxes" && (
               <>
-                <div className="w-28 space-y-1">
-                  <label className="text-xs font-medium text-muted-foreground">Rate (%)</label>
+                <FormField label="Rate (%)" className="w-28">
                   <Input
+                    id="tax-rate"
                     type="number"
                     step="0.01"
                     value={taxRate}
                     onChange={(e) => setTaxRate(e.target.value)}
                   />
-                </div>
-                <div className="w-36 space-y-1">
-                  <Label>Type</Label>
+                </FormField>
+                <FormField label="Type" className="w-36">
                   <Select
                     value={taxType}
                     onValueChange={(v) => setTaxType((v as "exclusive" | "inclusive") ?? "exclusive")}
@@ -159,116 +189,226 @@ export default function CategoriesAndCatalogConfigPage() {
                       <SelectItem value="inclusive">Inclusive</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </FormField>
               </>
             )}
-            <Button type="submit" disabled={createMutation.isPending}>
-              <Plus className="h-4 w-4" /> Add
+            <Button
+              type="submit"
+              variant="solid"
+              color="primary"
+              isLoading={createMutation.isPending}
+              leftIcon={<Plus className="h-4 w-4" />}
+            >
+              Add
             </Button>
           </form>
-        </CardContent>
+        </CardBody>
       </Card>
 
-      <Card>
-        <CardHeader>
+      <Card variant="elevated" padding="none">
+        <CardHeader className="px-6 pt-5 pb-3">
           <CardTitle className="capitalize">{tab}</CardTitle>
         </CardHeader>
-        <CardContent>
-          {tab === "categories" && (
-            <div className="divide-y divide-border">
-              {(categoriesQuery.data?.data ?? []).map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2.5 text-sm">
-                  <div>
-                    <span className="font-mono text-xs text-muted-foreground mr-2">{item.code}</span>
-                    <span className="font-medium">{item.name}</span>
-                    {item.parent && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        (Parent: {item.parent.name})
-                      </span>
-                    )}
-                  </div>
-                  <Badge variant={item.is_active ? "success" : "muted"}>
-                    {item.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              ))}
-              {!categoriesQuery.isLoading && (categoriesQuery.data?.data ?? []).length === 0 && (
-                <p className="text-sm text-muted-foreground">No categories yet.</p>
-              )}
+        <CardBody className="p-0">
+          {isLoading ? (
+            <div className="space-y-3 p-6">
+              <Skeleton variant="rounded" height={40} />
+              <Skeleton variant="rounded" height={40} />
+              <Skeleton variant="rounded" height={40} />
             </div>
-          )}
-
-          {tab === "brands" && (
-            <div className="divide-y divide-border">
-              {(brandsQuery.data?.data ?? []).map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2.5 text-sm">
-                  <div>
-                    <span className="font-mono text-xs text-muted-foreground mr-2">{item.code}</span>
-                    <span className="font-medium">{item.name}</span>
-                  </div>
-                  <Badge variant={item.is_active ? "success" : "muted"}>
-                    {item.is_active ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-              ))}
-              {!brandsQuery.isLoading && (brandsQuery.data?.data ?? []).length === 0 && (
-                <p className="text-sm text-muted-foreground">No brands yet.</p>
-              )}
+          ) : tab === "categories" ? (
+            (categoriesQuery.data?.data ?? []).length === 0 ? (
+              <div className="p-6">
+                <EmptyState
+                  variant="bordered"
+                  size="sm"
+                  title="No categories yet"
+                  description="Create your first product category using the form above."
+                />
+              </div>
+            ) : (
+              <Table variant="hoverable">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Parent</TableHead>
+                    <TableHead align="right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(categoriesQuery.data?.data ?? []).map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-mono text-xs text-eta-muted">
+                        {item.code}
+                      </TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell className="text-eta-muted">
+                        {item.parent ? item.parent.name : "—"}
+                      </TableCell>
+                      <TableCell align="right">
+                        <Badge variant="soft" color={item.is_active ? "success" : "neutral"}>
+                          {item.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )
+          ) : tab === "brands" ? (
+            (brandsQuery.data?.data ?? []).length === 0 ? (
+              <div className="p-6">
+                <EmptyState
+                  variant="bordered"
+                  size="sm"
+                  title="No brands yet"
+                  description="Create your first product brand using the form above."
+                />
+              </div>
+            ) : (
+              <Table variant="hoverable">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead align="right">Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(brandsQuery.data?.data ?? []).map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-mono text-xs text-eta-muted">
+                        {item.code}
+                      </TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell align="right">
+                        <Badge variant="soft" color={item.is_active ? "success" : "neutral"}>
+                          {item.is_active ? "Active" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )
+          ) : tab === "units" ? (
+            (unitsQuery.data?.data ?? []).length === 0 ? (
+              <div className="p-6">
+                <EmptyState
+                  variant="bordered"
+                  size="sm"
+                  title="No units yet"
+                  description="Create your first unit of measurement using the form above."
+                />
+              </div>
+            ) : (
+              <Table variant="hoverable">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead align="right">Precision</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(unitsQuery.data?.data ?? []).map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-mono text-xs text-eta-muted">
+                        {item.code}
+                      </TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell align="right">
+                        <Badge variant="soft" color="neutral">
+                          {item.allow_decimal ? "Decimal" : "Integer"}
+                        </Badge>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )
+          ) : tab === "taxes" ? (
+            (taxesQuery.data?.data ?? []).length === 0 ? (
+              <div className="p-6">
+                <EmptyState
+                  variant="bordered"
+                  size="sm"
+                  title="No taxes yet"
+                  description="Create your first tax rule using the form above."
+                />
+              </div>
+            ) : (
+              <Table variant="hoverable">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Name</TableHead>
+                    <TableHead align="right">Rate &amp; Type</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(taxesQuery.data?.data ?? []).map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell className="font-mono text-xs text-eta-muted">
+                        {item.code}
+                      </TableCell>
+                      <TableCell className="font-medium">{item.name}</TableCell>
+                      <TableCell align="right">
+                        <div className="inline-flex items-center gap-2">
+                          <Badge variant="solid" color="primary">
+                            {Number(item.rate)}%
+                          </Badge>
+                          <Badge variant="soft" color="neutral">
+                            {item.type}
+                          </Badge>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )
+          ) : (warehousesQuery.data?.data ?? []).length === 0 ? (
+            <div className="p-6">
+              <EmptyState
+                variant="bordered"
+                size="sm"
+                title="No warehouses yet"
+                description="Create your first warehouse using the form above."
+              />
             </div>
+          ) : (
+            <Table variant="hoverable">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Store</TableHead>
+                  <TableHead align="right">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(warehousesQuery.data?.data ?? []).map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-mono text-xs text-eta-muted">
+                      {item.code}
+                    </TableCell>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell className="text-eta-muted">
+                      {item.store ? item.store.name : "—"}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Badge variant="soft" color={item.is_default ? "success" : "neutral"}>
+                        {item.is_default ? "Default" : item.status}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
-
-          {tab === "units" && (
-            <div className="divide-y divide-border">
-              {(unitsQuery.data?.data ?? []).map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2.5 text-sm">
-                  <div>
-                    <span className="font-mono text-xs text-muted-foreground mr-2">{item.code}</span>
-                    <span className="font-medium">{item.name}</span>
-                  </div>
-                  <Badge variant="muted">{item.allow_decimal ? "Decimal" : "Integer"}</Badge>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab === "taxes" && (
-            <div className="divide-y divide-border">
-              {(taxesQuery.data?.data ?? []).map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2.5 text-sm">
-                  <div>
-                    <span className="font-mono text-xs text-muted-foreground mr-2">{item.code}</span>
-                    <span className="font-medium">{item.name}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Badge>{Number(item.rate)}%</Badge>
-                    <Badge variant="muted">{item.type}</Badge>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-
-          {tab === "warehouses" && (
-            <div className="divide-y divide-border">
-              {(warehousesQuery.data?.data ?? []).map((item) => (
-                <div key={item.id} className="flex items-center justify-between py-2.5 text-sm">
-                  <div>
-                    <span className="font-mono text-xs text-muted-foreground mr-2">{item.code}</span>
-                    <span className="font-medium">{item.name}</span>
-                    {item.store && (
-                      <span className="ml-2 text-xs text-muted-foreground">
-                        ({item.store.name})
-                      </span>
-                    )}
-                  </div>
-                  <Badge variant={item.is_default ? "success" : "muted"}>
-                    {item.is_default ? "Default" : item.status}
-                  </Badge>
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
+        </CardBody>
       </Card>
     </div>
   );

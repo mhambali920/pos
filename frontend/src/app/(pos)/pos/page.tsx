@@ -2,12 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   ArrowLeft,
   ArrowRight,
   Banknote,
-  Check,
   CheckCircle2,
   Clock,
   CreditCard,
@@ -17,7 +16,6 @@ import {
   Pause,
   Pencil,
   Plus,
-  Printer,
   QrCode,
   RotateCcw,
   ScanBarcode,
@@ -26,13 +24,27 @@ import {
   Store as StoreIcon,
   Trash2,
   User as UserIcon,
-  UserPlus,
   Wallet,
   X,
 } from "lucide-react";
-import { toast } from "sonner";
+import {
+  Alert,
+  AspectRatio,
+  Avatar,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  Divider,
+  EmptyState,
+  IconButton,
+  Input,
+  Kbd,
+  Skeleton,
+  ThemeToggle,
+  useToast,
+} from "@eta-ui/react";
 import { apiFetch, ApiError } from "@/lib/api";
-import { printThermalReceipt } from "@/lib/print-receipt";
 import type {
   CategoryItem,
   CustomerItem,
@@ -45,45 +57,14 @@ import type {
 import { cn, formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import { usePosCartStore } from "@/stores/pos-cart-store";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  getCustomerTypeLabel,
+  PosCustomerDrawer,
+} from "@/components/pos/pos-customer-drawer";
+import { PosHeldDrawer } from "@/components/pos/pos-held-drawer";
+import { PosReceiptDialog } from "@/components/pos/pos-receipt-dialog";
 
 const QUICK_CASH_AMOUNTS = [50_000, 100_000, 200_000] as const;
-
-type CustomerSegment = "all" | "member" | "registered" | "wholesale";
-
-function getInitials(name?: string | null): string {
-  if (!name) return "?";
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return `${parts[0][0] ?? ""}${parts[parts.length - 1][0] ?? ""}`.toUpperCase();
-}
-
-function getCustomerTypeLabel(type: CustomerItem["customer_type"]): string {
-  switch (type) {
-    case "member":
-      return "Member";
-    case "wholesale":
-      return "Grosir B2B";
-    case "registered":
-      return "Reguler";
-    default:
-      return "Walk-in";
-  }
-}
 
 function PaymentMethodIcon({ type, className }: { type: string; className?: string }) {
   switch (type) {
@@ -103,6 +84,7 @@ function PaymentMethodIcon({ type, className }: { type: string; className?: stri
 
 export default function PosTerminalPage() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const barcodeInputRef = useRef<HTMLInputElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -125,17 +107,9 @@ export default function PosTerminalPage() {
   const [clockText, setClockText] = useState("");
   const [variantImages, setVariantImages] = useState<Record<number, string | null>>({});
 
-  // Customer Selector Sheet state (Stitch Screen 2)
+  // Customer Selector Sheet state
   const [customerSheetOpen, setCustomerSheetOpen] = useState(false);
-  const [draftCustomerId, setDraftCustomerId] = useState<number | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
-  const [customerSegment, setCustomerSegment] = useState<CustomerSegment>("all");
-  const [quickAddOpen, setQuickAddOpen] = useState(false);
-  const [newCustomerName, setNewCustomerName] = useState("");
-  const [newCustomerPhone, setNewCustomerPhone] = useState("");
-  const [newCustomerType, setNewCustomerType] = useState<"registered" | "member" | "wholesale">(
-    "registered"
-  );
 
   const {
     items,
@@ -199,33 +173,6 @@ export default function PosTerminalPage() {
     enabled: isAuthenticated,
   });
 
-  const createCustomerMutation = useMutation({
-    mutationFn: (payload: {
-      code: string;
-      name: string;
-      phone: string | null;
-      customer_type: "registered" | "member" | "wholesale";
-    }) =>
-      apiFetch<CustomerItem>("/customers", {
-        method: "POST",
-        body: payload,
-      }),
-    onSuccess: (res) => {
-      void queryClient.invalidateQueries({ queryKey: ["pos-customers"] });
-      setDraftCustomerId(res.data.id);
-      setSelectedCustomerId(res.data.id);
-      setQuickAddOpen(false);
-      setNewCustomerName("");
-      setNewCustomerPhone("");
-      setNewCustomerType("registered");
-      setCustomerSheetOpen(false);
-      toast.success(`Pelanggan ${res.data.name} ditambahkan dan diterapkan.`);
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Gagal menambahkan pelanggan.");
-    },
-  });
-
   const methods = useMemo(
     () => paymentMethodsQuery.data?.data ?? [],
     [paymentMethodsQuery.data?.data]
@@ -242,20 +189,6 @@ export default function PosTerminalPage() {
     () => customers.find((c) => c.id === selectedCustomerId) ?? null,
     [customers, selectedCustomerId]
   );
-
-  const filteredCustomers = useMemo(() => {
-    const q = customerSearch.trim().toLowerCase();
-    return customers.filter((c) => {
-      if (c.customer_type === "walk_in") return false;
-      if (customerSegment !== "all" && c.customer_type !== customerSegment) return false;
-      if (!q) return true;
-      return (
-        c.name.toLowerCase().includes(q) ||
-        c.code.toLowerCase().includes(q) ||
-        (c.phone ?? "").toLowerCase().includes(q)
-      );
-    });
-  }, [customers, customerSearch, customerSegment]);
 
   const cartQtyByVariant = useMemo(() => {
     const map = new Map<number, number>();
@@ -455,30 +388,6 @@ export default function PosTerminalPage() {
     }
   };
 
-  const handleQuickAddCustomer = (e: React.FormEvent) => {
-    e.preventDefault();
-    const name = newCustomerName.trim();
-    if (!name || createCustomerMutation.isPending) return;
-    const code = `CUST-${Date.now().toString().slice(-6)}`;
-    createCustomerMutation.mutate({
-      code,
-      name,
-      phone: newCustomerPhone.trim() || null,
-      customer_type: newCustomerType,
-    });
-  };
-
-  const openCustomerSheet = () => {
-    setDraftCustomerId(selectedCustomerId);
-    setQuickAddOpen(false);
-    setCustomerSheetOpen(true);
-  };
-
-  const applySelectedCustomer = () => {
-    setSelectedCustomerId(draftCustomerId);
-    setCustomerSheetOpen(false);
-  };
-
   useEffect(() => {
     if (isAuthenticated) {
       barcodeInputRef.current?.focus();
@@ -520,36 +429,35 @@ export default function PosTerminalPage() {
   const categories = categoriesQuery.data?.data ?? [];
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background text-foreground">
-      {/* Top Header Bar — Preserving user's left store/backoffice block + Stitch center scan & right held orders */}
-      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-border bg-card/90 px-4 py-2 backdrop-blur-md lg:h-16 lg:flex-nowrap lg:py-0">
-        {/* PRESERVED LEFT BLOCK */}
+    <div className="flex h-dvh flex-col overflow-hidden bg-eta-base text-eta-heading">
+      {/* Top Header Bar */}
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b border-eta-border bg-eta-surface/90 px-4 py-2 backdrop-blur-md lg:h-16 lg:flex-nowrap lg:py-0">
         <div className="flex min-w-0 flex-1 items-center gap-2.5 lg:flex-none">
           <Button
+            asChild
             variant="outline"
-            render={<Link href="/" />}
-            nativeButton={false}
-            aria-label="Back to backoffice"
-            className="h-11 gap-2 px-3 cursor-pointer"
+            size="sm"
+            leftIcon={<ArrowLeft className="h-4 w-4" aria-hidden="true" />}
           >
-            <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-            <span className="hidden sm:inline">Backoffice</span>
+            <Link href="/" aria-label="Back to backoffice">
+              <span className="hidden sm:inline">Backoffice</span>
+            </Link>
           </Button>
 
-          <div className="hidden h-6 w-px bg-border sm:block" aria-hidden="true" />
+          <Divider orientation="vertical" spacing="none" className="hidden h-6 sm:block" />
 
           <div className="flex min-w-0 items-center gap-2.5">
-            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-eta-primary text-eta-inverse">
               <StoreIcon className="h-4 w-4" aria-hidden="true" />
             </div>
             <div className="min-w-0 leading-tight">
-              <h1 className="truncate text-sm font-semibold tracking-tight sm:text-base">
+              <h1 className="truncate text-sm font-semibold tracking-tight text-eta-heading sm:text-base">
                 {activeStore ? activeStore.name : "POS Register"}
               </h1>
-              <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
+              <p className="flex items-center gap-1.5 truncate text-xs text-eta-muted">
                 {activeStore && (
                   <>
-                    <span className="font-mono font-medium text-foreground/80">
+                    <span className="font-mono font-medium text-eta-heading">
                       {activeStore.code}
                     </span>
                     <span aria-hidden="true">·</span>
@@ -570,7 +478,7 @@ export default function PosTerminalPage() {
           </div>
         </div>
 
-        {/* Center: Quick Scan Input (Stitch style) */}
+        {/* Center: Quick Scan Input */}
         <form
           onSubmit={handleBarcodeScan}
           className="order-last flex w-full items-center lg:order-none lg:mx-auto lg:w-auto lg:max-w-sm lg:flex-1"
@@ -578,129 +486,118 @@ export default function PosTerminalPage() {
           <label htmlFor="pos-barcode" className="sr-only">
             Scan SKU atau Barcode
           </label>
-          <div className="relative flex w-full items-center">
-            <ScanBarcode
-              aria-hidden="true"
-              className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground"
-            />
-            <input
-              id="pos-barcode"
-              ref={barcodeInputRef}
-              value={barcode}
-              onChange={(e) => setBarcode(e.target.value)}
-              disabled={!isAuthenticated}
-              autoComplete="off"
-              placeholder="Scan SKU / Barcode..."
-              className="h-9 w-full rounded-md border border-border bg-muted/60 pl-9 pr-11 font-mono text-xs text-foreground placeholder:text-muted-foreground transition-colors focus-visible:border-ring focus-visible:bg-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-            <kbd className="pointer-events-none absolute right-2 rounded border border-border bg-card px-1.5 py-0.5 font-mono text-[10px] font-medium text-muted-foreground">
-              F2
-            </kbd>
-          </div>
+          <Input
+            id="pos-barcode"
+            ref={barcodeInputRef}
+            size="sm"
+            value={barcode}
+            onChange={(e) => setBarcode(e.target.value)}
+            disabled={!isAuthenticated}
+            autoComplete="off"
+            placeholder="Scan SKU / Barcode..."
+            leftAdornment={<ScanBarcode className="h-4 w-4" aria-hidden="true" />}
+            rightAdornment={<Kbd size="sm">F2</Kbd>}
+            wrapperClassName="w-full"
+            className="font-mono text-xs"
+          />
         </form>
 
-        {/* Right: Held Orders Link/Button (Stitch style) */}
-        <button
-          type="button"
-          onClick={() => setHeldDrawerOpen(true)}
-          disabled={!isAuthenticated}
-          aria-label={`Held Orders, ${heldCount}`}
-          className="inline-flex h-9 cursor-pointer items-center gap-2 rounded-md px-3 text-xs font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <span>Held Orders</span>
-          <span
-            className={cn(
-              "inline-flex h-5 min-w-5 items-center justify-center rounded-full border px-1.5 font-mono text-[10px] font-semibold tabular-nums",
-              heldCount > 0
-                ? "border-amber-500/40 bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                : "border-border bg-muted text-muted-foreground"
-            )}
+        {/* Right: Theme Toggle & Held Orders */}
+        <div className="flex items-center gap-1.5">
+          <ThemeToggle variant="icon" size="sm" />
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setHeldDrawerOpen(true)}
+            disabled={!isAuthenticated}
+            aria-label={`Held Orders, ${heldCount}`}
           >
-            {heldCount}
-          </span>
-        </button>
+            <span>Held Orders</span>
+            <Badge
+              variant="soft"
+              color={heldCount > 0 ? "warning" : "neutral"}
+              size="sm"
+              className="font-mono tabular-nums"
+            >
+              {heldCount}
+            </Badge>
+          </Button>
+        </div>
       </header>
 
       {/* Main Split Workspace */}
       {!isAuthenticated ? (
         <main className="flex flex-1 items-center justify-center p-6">
-          <div className="w-full max-w-md rounded-xl border border-border bg-card p-8 text-center">
-            <div className="mx-auto mb-4 flex size-12 items-center justify-center rounded-xl bg-muted text-foreground">
-              <LogIn className="h-6 w-6" aria-hidden="true" />
-            </div>
-            <h2 className="text-lg font-semibold tracking-tight">Sesi Kasir Diperlukan</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-              Masuk dengan akun outlet Anda (default:{" "}
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs text-foreground">
-                admin@pos.local
-              </code>
-              ) untuk memuat katalog produk, pelanggan, dan metode pembayaran.
-            </p>
-            <div className="mt-6 flex flex-wrap justify-center gap-3">
-              <Button
-                render={<Link href="/login" />}
-                nativeButton={false}
-                className="h-10 px-5 cursor-pointer"
-              >
-                Masuk ke Kasir
-              </Button>
-              <Button
-                variant="outline"
-                render={<Link href="/" />}
-                nativeButton={false}
-                className="h-10 px-5 cursor-pointer"
-              >
-                Kembali ke Dashboard
-              </Button>
-            </div>
-          </div>
+          <Card variant="elevated" padding="lg" className="w-full max-w-md text-center">
+            <CardBody className="flex flex-col items-center">
+              <div className="mb-4 flex size-12 items-center justify-center rounded-xl bg-eta-subtle text-eta-heading">
+                <LogIn className="h-6 w-6" aria-hidden="true" />
+              </div>
+              <h2 className="text-lg font-semibold tracking-tight text-eta-heading">
+                Sesi Kasir Diperlukan
+              </h2>
+              <p className="mt-2 text-sm leading-relaxed text-eta-muted">
+                Masuk dengan akun outlet Anda (default:{" "}
+                <code className="rounded bg-eta-subtle px-1.5 py-0.5 font-mono text-xs text-eta-heading">
+                  admin@pos.local
+                </code>
+                ) untuk memuat katalog produk, pelanggan, dan metode pembayaran.
+              </p>
+              <div className="mt-6 flex flex-wrap justify-center gap-3">
+                <Button asChild variant="solid" color="primary">
+                  <Link href="/login">Masuk ke Kasir</Link>
+                </Button>
+                <Button asChild variant="outline">
+                  <Link href="/">Kembali ke Dashboard</Link>
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
         </main>
       ) : (
         <main className="flex min-h-0 flex-1 overflow-hidden">
-          {/* LEFT PANE: CATALOGUE & SEARCH (Stitch Neutral Precision) */}
+          {/* LEFT PANE: CATALOGUE & SEARCH */}
           <section
             aria-label="Katalog Produk"
-            className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background lg:border-r lg:border-border"
+            className="flex min-w-0 flex-1 flex-col overflow-hidden bg-eta-base lg:border-r lg:border-eta-border"
           >
             {/* Action Toolbar: Search + Category Filter Pills */}
-            <div className="flex flex-col gap-3 border-b border-border bg-background/80 p-4">
+            <div className="flex flex-col gap-3 border-b border-eta-border bg-eta-surface/60 p-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="relative flex min-w-[240px] max-w-xl flex-1 items-center">
+                <div className="min-w-[240px] max-w-xl flex-1">
                   <label htmlFor="pos-search" className="sr-only">
                     Cari SKU atau Nama Produk
                   </label>
-                  <Search
-                    aria-hidden="true"
-                    className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground"
-                  />
-                  <input
+                  <Input
                     id="pos-search"
                     ref={searchInputRef}
                     type="search"
+                    size="sm"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
                     placeholder="Cari SKU, Nama Produk, atau Scan Barcode EAN-13..."
-                    className="h-9 w-full rounded-md border border-border bg-card pl-9 pr-20 text-xs text-foreground placeholder:text-muted-foreground transition-colors focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 [&::-webkit-search-cancel-button]:hidden"
+                    leftAdornment={<Search className="h-4 w-4" aria-hidden="true" />}
+                    rightAdornment={
+                      search ? (
+                        <IconButton
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          icon={<X className="h-3.5 w-3.5" aria-hidden="true" />}
+                          aria-label="Hapus pencarian"
+                          onClick={() => setSearch("")}
+                        />
+                      ) : (
+                        <div className="hidden items-center gap-1 sm:flex">
+                          <Kbd size="sm">⌘K</Kbd>
+                          <Kbd size="sm">F1</Kbd>
+                        </div>
+                      )
+                    }
+                    wrapperClassName="w-full"
+                    className="text-xs [&::-webkit-search-cancel-button]:hidden"
                   />
-                  {search ? (
-                    <button
-                      type="button"
-                      onClick={() => setSearch("")}
-                      aria-label="Hapus pencarian"
-                      className="absolute right-2 flex size-6 cursor-pointer items-center justify-center rounded text-muted-foreground hover:bg-muted hover:text-foreground"
-                    >
-                      <X className="h-3.5 w-3.5" aria-hidden="true" />
-                    </button>
-                  ) : (
-                    <div className="pointer-events-none absolute right-2 hidden items-center gap-1 sm:flex">
-                      <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        ⌘K
-                      </kbd>
-                      <kbd className="rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                        F1
-                      </kbd>
-                    </div>
-                  )}
                 </div>
               </div>
 
@@ -710,60 +607,52 @@ export default function PosTerminalPage() {
                 aria-label="Filter kategori produk"
                 className="flex items-center gap-1.5 overflow-x-auto pb-0.5"
               >
-                <button
+                <Button
                   type="button"
+                  size="sm"
+                  variant={categoryId === null ? "solid" : "outline"}
+                  color="primary"
                   aria-pressed={categoryId === null}
                   onClick={() => setCategoryId(null)}
-                  className={cn(
-                    "inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                    categoryId === null
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-                  )}
+                  className="shrink-0 whitespace-nowrap"
                 >
                   <span>Semua Produk</span>
-                  <span
-                    className={cn(
-                      "rounded px-1.5 py-0.5 font-mono text-[10px] font-semibold tabular-nums",
-                      categoryId === null
-                        ? "bg-primary-foreground/20 text-primary-foreground"
-                        : "bg-muted text-muted-foreground"
-                    )}
+                  <Badge
+                    variant="soft"
+                    color="neutral"
+                    size="sm"
+                    className="font-mono tabular-nums"
                   >
                     {productTiles.length}
-                  </span>
-                </button>
+                  </Badge>
+                </Button>
 
                 {categories.map((cat) => {
                   const isActive = categoryId === cat.id;
                   const count = categoryCounts.get(cat.id);
                   return (
-                    <button
+                    <Button
                       key={cat.id}
                       type="button"
+                      size="sm"
+                      variant={isActive ? "solid" : "outline"}
+                      color="primary"
                       aria-pressed={isActive}
                       onClick={() => setCategoryId(cat.id)}
-                      className={cn(
-                        "inline-flex h-8 shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-3 text-xs font-medium whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                        isActive
-                          ? "bg-primary text-primary-foreground shadow-xs"
-                          : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
+                      className="shrink-0 whitespace-nowrap"
                     >
                       <span>{cat.name}</span>
                       {count !== undefined && (
-                        <span
-                          className={cn(
-                            "rounded px-1.5 py-0.5 font-mono text-[10px] tabular-nums",
-                            isActive
-                              ? "bg-primary-foreground/20 text-primary-foreground font-semibold"
-                              : "bg-muted text-muted-foreground"
-                          )}
+                        <Badge
+                          variant="soft"
+                          color="neutral"
+                          size="sm"
+                          className="font-mono tabular-nums"
                         >
                           {count}
-                        </span>
+                        </Badge>
                       )}
-                    </button>
+                    </Button>
                   );
                 })}
               </div>
@@ -778,71 +667,64 @@ export default function PosTerminalPage() {
                   className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4"
                 >
                   {Array.from({ length: 8 }).map((_, idx) => (
-                    <div
-                      key={idx}
-                      className="rounded-lg border border-border bg-card p-3"
-                    >
-                      <div className="mb-2.5 aspect-[4/3] animate-pulse rounded-md bg-muted" />
-                      <div className="h-2.5 w-16 animate-pulse rounded bg-muted" />
-                      <div className="mt-1.5 h-3.5 w-3/4 animate-pulse rounded bg-muted" />
-                      <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-2">
-                        <div className="h-4 w-20 animate-pulse rounded bg-muted" />
-                        <div className="size-7 animate-pulse rounded-md bg-muted" />
-                      </div>
-                    </div>
+                    <Skeleton key={idx} variant="rounded" height={200} />
                   ))}
                 </div>
               ) : productsQuery.isError ? (
-                <div className="mx-auto mt-10 max-w-md rounded-lg border border-destructive/30 bg-destructive/5 p-6 text-center">
-                  <p className="text-sm font-semibold text-destructive">
-                    Gagal memuat katalog produk
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {productsQuery.error instanceof Error
-                      ? productsQuery.error.message
-                      : "Terjadi kesalahan saat mengambil data produk."}
-                  </p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="mt-4 cursor-pointer"
-                    onClick={() => void productsQuery.refetch()}
-                  >
-                    <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
-                    Coba Lagi
-                  </Button>
+                <div className="mx-auto mt-10 max-w-md">
+                  <Alert
+                    status="error"
+                    variant="soft"
+                    title="Gagal memuat katalog produk"
+                    description={
+                      productsQuery.error instanceof Error
+                        ? productsQuery.error.message
+                        : "Terjadi kesalahan saat mengambil data produk."
+                    }
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        leftIcon={<RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />}
+                        onClick={() => void productsQuery.refetch()}
+                      >
+                        Coba Lagi
+                      </Button>
+                    }
+                  />
                 </div>
               ) : productTiles.length === 0 ? (
-                <div className="mx-auto mt-10 flex max-w-sm flex-col items-center rounded-lg border border-dashed border-border bg-card/50 p-8 text-center">
-                  <ShoppingBag
-                    className="h-8 w-8 text-muted-foreground"
-                    aria-hidden="true"
+                <div className="mx-auto mt-10 max-w-sm">
+                  <EmptyState
+                    variant="bordered"
+                    icon={<ShoppingBag className="h-7 w-7" aria-hidden="true" />}
+                    title={
+                      search || categoryId !== null
+                        ? "Produk tidak ditemukan"
+                        : "Katalog masih kosong"
+                    }
+                    description={
+                      search || categoryId !== null
+                        ? "Coba ubah kata kunci pencarian atau pilih kategori lain."
+                        : "Tambahkan produk di Backoffice untuk mulai bertransaksi."
+                    }
+                    action={
+                      search || categoryId !== null ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            setSearch("");
+                            setCategoryId(null);
+                          }}
+                        >
+                          Reset Filter
+                        </Button>
+                      ) : undefined
+                    }
                   />
-                  <p className="mt-3 text-sm font-semibold">
-                    {search || categoryId !== null
-                      ? "Produk tidak ditemukan"
-                      : "Katalog masih kosong"}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {search || categoryId !== null
-                      ? "Coba ubah kata kunci pencarian atau pilih kategori lain."
-                      : "Tambahkan produk di Backoffice untuk mulai bertransaksi."}
-                  </p>
-                  {(search || categoryId !== null) && (
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-4 cursor-pointer"
-                      onClick={() => {
-                        setSearch("");
-                        setCategoryId(null);
-                      }}
-                    >
-                      Reset Filter
-                    </Button>
-                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
@@ -858,65 +740,86 @@ export default function PosTerminalPage() {
                           inCartQty > 0 ? `, ${inCartQty} di keranjang` : ""
                         }`}
                         onClick={() => handleAddTile(product, variant)}
-                        className={cn(
-                          "group flex cursor-pointer flex-col justify-between rounded-lg border bg-card/70 p-3 text-left transition-all duration-150 hover:bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.985]",
-                          inCartQty > 0
-                            ? "border-primary/70 ring-1 ring-primary/20"
-                            : "border-border hover:border-foreground/30"
-                        )}
+                        className="group cursor-pointer text-left focus-visible:outline-none active:scale-[0.985]"
                       >
-                        <div className="w-full">
-                          <div className="relative mb-2.5 aspect-[4/3] w-full overflow-hidden rounded-md border border-border/60 bg-muted">
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={product.image_path || "/images/products/placeholder.svg"}
-                              alt=""
-                              width={320}
-                              height={240}
-                              loading="lazy"
-                              onError={(e) => {
-                                if (
-                                  !e.currentTarget.src.endsWith(
-                                    "/images/products/placeholder.svg"
-                                  )
-                                ) {
-                                  e.currentTarget.src = "/images/products/placeholder.svg";
-                                }
-                              }}
-                              className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-                            />
-                            <span className="absolute left-1.5 top-1.5 rounded border border-border/80 bg-background/85 px-1.5 py-0.5 font-mono text-[10px] font-medium text-foreground backdrop-blur-sm">
-                              {variant.sku}
-                            </span>
-                            {inCartQty > 0 && (
+                        <Card
+                          variant="outline"
+                          padding="sm"
+                          isInteractive
+                          className={cn(
+                            "flex h-full flex-col justify-between transition-all",
+                            inCartQty > 0 && "border-eta-primary ring-1 ring-eta-primary/30"
+                          )}
+                        >
+                          <CardBody className="flex h-full flex-col justify-between p-0">
+                            <div className="w-full">
+                              <div className="relative mb-2.5 overflow-hidden rounded-md border border-eta-border bg-eta-subtle">
+                                <AspectRatio ratio={4 / 3}>
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={
+                                      product.image_path ||
+                                      "/images/products/placeholder.svg"
+                                    }
+                                    alt=""
+                                    width={320}
+                                    height={240}
+                                    loading="lazy"
+                                    onError={(e) => {
+                                      if (
+                                        !e.currentTarget.src.endsWith(
+                                          "/images/products/placeholder.svg"
+                                        )
+                                      ) {
+                                        e.currentTarget.src =
+                                          "/images/products/placeholder.svg";
+                                      }
+                                    }}
+                                    className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                                  />
+                                </AspectRatio>
+                                <Badge
+                                  variant="soft"
+                                  color="neutral"
+                                  size="sm"
+                                  className="absolute left-1.5 top-1.5 font-mono backdrop-blur-sm"
+                                >
+                                  {variant.sku}
+                                </Badge>
+                                {inCartQty > 0 && (
+                                  <Badge
+                                    variant="solid"
+                                    color="success"
+                                    size="sm"
+                                    aria-hidden="true"
+                                    className="absolute right-1.5 top-1.5 font-mono tabular-nums"
+                                  >
+                                    ×{inCartQty}
+                                  </Badge>
+                                )}
+                              </div>
+
+                              <span className="mb-0.5 block truncate text-[10px] font-medium uppercase tracking-wider text-eta-muted">
+                                {product.category?.name ?? "Produk"}
+                              </span>
+                              <h3 className="line-clamp-1 text-xs font-semibold text-eta-heading">
+                                {label}
+                              </h3>
+                            </div>
+
+                            <div className="mt-3 flex w-full items-center justify-between border-t border-eta-border pt-2">
+                              <span className="font-mono text-sm font-semibold tabular-nums text-eta-heading">
+                                {formatCurrency(variant.selling_price)}
+                              </span>
                               <span
                                 aria-hidden="true"
-                                className="absolute right-1.5 top-1.5 rounded bg-emerald-600 px-1.5 py-0.5 font-mono text-[10px] font-bold text-white tabular-nums dark:bg-emerald-500 dark:text-neutral-950"
+                                className="flex size-7 items-center justify-center rounded-md border border-eta-border bg-eta-subtle text-eta-heading transition-colors group-hover:border-eta-primary group-hover:bg-eta-primary group-hover:text-eta-inverse"
                               >
-                                ×{inCartQty}
+                                <Plus className="h-4 w-4" />
                               </span>
-                            )}
-                          </div>
-
-                          <span className="mb-0.5 block truncate text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                            {product.category?.name ?? "Produk"}
-                          </span>
-                          <h3 className="line-clamp-1 text-xs font-semibold text-foreground">
-                            {label}
-                          </h3>
-                        </div>
-
-                        <div className="mt-3 flex w-full items-center justify-between border-t border-border/60 pt-2">
-                          <span className="font-mono text-sm font-semibold tabular-nums text-foreground">
-                            {formatCurrency(variant.selling_price)}
-                          </span>
-                          <span
-                            aria-hidden="true"
-                            className="flex size-7 items-center justify-center rounded-md border border-border bg-muted text-foreground shadow-xs transition-colors group-hover:border-primary group-hover:bg-primary group-hover:text-primary-foreground"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </span>
-                        </div>
+                            </div>
+                          </CardBody>
+                        </Card>
                       </button>
                     );
                   })}
@@ -925,31 +828,39 @@ export default function PosTerminalPage() {
             </div>
           </section>
 
-          {/* RIGHT PANE: ACTIVE ORDER TICKET & CHECKOUT PANEL (Stitch Neutral Precision) */}
+          {/* RIGHT PANE: ACTIVE ORDER TICKET & CHECKOUT PANEL */}
           <aside
             aria-label="Pesanan Aktif"
             className={cn(
-              "w-full flex-col justify-between bg-card/50 lg:static lg:z-auto lg:flex lg:w-[410px] lg:shrink-0 xl:w-[440px]",
-              ticketOpen ? "fixed inset-0 z-40 flex bg-card" : "hidden"
+              "w-full flex-col justify-between bg-eta-surface lg:static lg:z-auto lg:flex lg:w-[410px] lg:shrink-0 xl:w-[440px]",
+              ticketOpen ? "fixed inset-0 z-40 flex bg-eta-surface" : "hidden"
             )}
           >
             {/* Ticket Header & Customer Bar */}
-            <div className="flex flex-col gap-3 border-b border-border bg-card/80 p-4">
+            <div className="flex flex-col gap-3 border-b border-eta-border bg-eta-surface p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <h2 className="text-sm font-semibold text-foreground">Pesanan Aktif</h2>
-                  <span className="rounded-full border border-border bg-muted px-2 py-0.5 font-mono text-[11px] font-medium text-muted-foreground tabular-nums">
+                  <h2 className="text-sm font-semibold text-eta-heading">Pesanan Aktif</h2>
+                  <Badge
+                    variant="soft"
+                    color="neutral"
+                    size="sm"
+                    className="font-mono tabular-nums"
+                  >
                     {totalItemCount} Item
-                  </span>
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   {clockText && (
-                    <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
+                    <span className="font-mono text-[11px] text-eta-muted tabular-nums">
                       {clockText} WIB
                     </span>
                   )}
-                  <button
+                  <IconButton
                     type="button"
+                    variant="outline"
+                    size="sm"
+                    icon={<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
                     onClick={() => {
                       clearCart();
                       resetPaymentInputs();
@@ -957,47 +868,49 @@ export default function PosTerminalPage() {
                     disabled={items.length === 0}
                     title="Kosongkan Keranjang"
                     aria-label="Kosongkan Keranjang"
-                    className="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:border-destructive/40 hover:bg-destructive/10 hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                  </button>
-                  <button
+                  />
+                  <IconButton
                     type="button"
+                    variant="outline"
+                    size="sm"
+                    icon={<X className="h-4 w-4" aria-hidden="true" />}
                     onClick={() => setTicketOpen(false)}
                     aria-label="Tutup panel pesanan"
-                    className="flex size-7 cursor-pointer items-center justify-center rounded-md border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground lg:hidden"
-                  >
-                    <X className="h-4 w-4" aria-hidden="true" />
-                  </button>
+                    className="lg:hidden"
+                  />
                 </div>
               </div>
 
-              {/* Customer Card — clicking opens Stitch Screen 2 Customer Selector Sheet */}
-              <div className="flex items-center justify-between rounded-md border border-border bg-card p-2 transition-colors hover:border-foreground/25">
+              {/* Customer Bar */}
+              <div className="flex items-center justify-between rounded-md border border-eta-border bg-eta-base p-2 transition-colors hover:border-eta-heading/25">
                 <button
                   type="button"
-                  onClick={openCustomerSheet}
+                  onClick={() => setCustomerSheetOpen(true)}
                   className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5 text-left focus-visible:outline-none"
                 >
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-foreground">
-                    {activeCustomer ? (
-                      getInitials(activeCustomer.name)
-                    ) : (
-                      <UserIcon className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
-                    )}
-                  </div>
+                  <Avatar
+                    name={activeCustomer?.name}
+                    fallback={<UserIcon className="h-3.5 w-3.5" aria-hidden="true" />}
+                    size="sm"
+                    shape="circle"
+                  />
                   <div className="flex min-w-0 flex-col">
                     <div className="flex items-center gap-1.5">
-                      <span className="truncate text-xs font-medium text-foreground">
+                      <span className="truncate text-xs font-medium text-eta-heading">
                         {activeCustomer ? activeCustomer.name : "Walk-in Customer"}
                       </span>
                       {activeCustomer && (
-                        <span className="shrink-0 rounded border border-border bg-muted px-1 py-0.2 font-mono text-[10px] text-muted-foreground">
+                        <Badge
+                          variant="soft"
+                          color="neutral"
+                          size="sm"
+                          className="shrink-0 font-mono"
+                        >
                           {getCustomerTypeLabel(activeCustomer.customer_type)}
-                        </span>
+                        </Badge>
                       )}
                     </div>
-                    <span className="truncate font-mono text-[10px] text-muted-foreground">
+                    <span className="truncate font-mono text-[10px] text-eta-muted">
                       {activeCustomer
                         ? `${activeCustomer.code}${
                             activeCustomer.loyalty_points > 0
@@ -1008,34 +921,32 @@ export default function PosTerminalPage() {
                     </span>
                   </div>
                 </button>
-                <button
+                <IconButton
                   type="button"
-                  onClick={openCustomerSheet}
+                  variant="ghost"
+                  size="sm"
+                  icon={<Pencil className="h-3.5 w-3.5" aria-hidden="true" />}
+                  onClick={() => setCustomerSheetOpen(true)}
                   title="Ubah Pelanggan"
                   aria-label="Ubah Pelanggan"
-                  className="ml-2 flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border bg-muted text-muted-foreground transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <Pencil className="h-3.5 w-3.5" aria-hidden="true" />
-                </button>
+                  className="ml-2 shrink-0"
+                />
               </div>
             </div>
 
-            {/* Ticket Items List (Stitch compact rows + hover floating delete) */}
+            {/* Ticket Items List */}
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
               {items.length === 0 ? (
-                <div className="flex h-full min-h-40 flex-col items-center justify-center py-8 text-center">
-                  <div className="flex size-11 items-center justify-center rounded-lg border border-border bg-muted text-muted-foreground">
-                    <ShoppingBag className="h-5 w-5" aria-hidden="true" />
-                  </div>
-                  <p className="mt-3 text-xs font-semibold text-foreground">
-                    Keranjang masih kosong
-                  </p>
-                  <p className="mt-1 max-w-[220px] text-[11px] leading-relaxed text-muted-foreground">
-                    Scan barcode atau klik produk di sebelah kiri untuk menambahkan ke pesanan.
-                  </p>
+                <div className="flex h-full min-h-40 items-center justify-center py-8">
+                  <EmptyState
+                    size="sm"
+                    icon={<ShoppingBag className="h-5 w-5" aria-hidden="true" />}
+                    title="Keranjang masih kosong"
+                    description="Scan barcode atau klik produk di sebelah kiri untuk menambahkan ke pesanan."
+                  />
                 </div>
               ) : (
-                <ul className="divide-y divide-border/60">
+                <ul className="divide-y divide-eta-border">
                   {items.map((item) => {
                     const lineTotal = item.unitPrice * item.quantity - item.discountAmount;
                     const thumb =
@@ -1048,7 +959,7 @@ export default function PosTerminalPage() {
                         className="group relative flex items-center justify-between gap-3 py-3 first:pt-1"
                       >
                         <div className="flex min-w-0 flex-1 items-center gap-3">
-                          <div className="size-11 shrink-0 overflow-hidden rounded-md border border-border bg-muted">
+                          <div className="size-11 shrink-0 overflow-hidden rounded-md border border-eta-border bg-eta-subtle">
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
                               src={thumb}
@@ -1068,60 +979,66 @@ export default function PosTerminalPage() {
                             />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <span className="mb-0.5 block truncate text-xs font-medium text-foreground">
+                            <span className="mb-0.5 block truncate text-xs font-medium text-eta-heading">
                               {item.name}
                             </span>
-                            <div className="flex items-center gap-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+                            <div className="flex items-center gap-1.5 font-mono text-[11px] text-eta-muted tabular-nums">
                               <span>{formatCurrency(item.unitPrice)}</span>
                               <span>×</span>
-                              <span className="font-medium text-foreground">{item.quantity}</span>
+                              <span className="font-medium text-eta-heading">
+                                {item.quantity}
+                              </span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center rounded border border-border bg-background p-0.5">
-                            <button
+                        <div className="flex items-center gap-2">
+                          <div className="flex items-center rounded border border-eta-border bg-eta-base p-0.5">
+                            <IconButton
                               type="button"
+                              variant="ghost"
+                              size="sm"
+                              icon={<Minus className="h-3 w-3" aria-hidden="true" />}
                               aria-label={`Kurangi jumlah ${item.name}`}
                               onClick={() =>
                                 updateQuantity(item.productVariantId, item.quantity - 1)
                               }
-                              className="flex size-6 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                            >
-                              <Minus className="h-3 w-3" aria-hidden="true" />
-                            </button>
+                              className="size-6 min-w-0 p-0"
+                            />
                             <span
                               aria-label={`Jumlah ${item.quantity}`}
-                              className="w-6 text-center font-mono text-xs font-medium text-foreground tabular-nums"
+                              className="w-6 text-center font-mono text-xs font-medium text-eta-heading tabular-nums"
                             >
                               {item.quantity}
                             </span>
-                            <button
+                            <IconButton
                               type="button"
+                              variant="ghost"
+                              size="sm"
+                              icon={<Plus className="h-3 w-3" aria-hidden="true" />}
                               aria-label={`Tambah jumlah ${item.name}`}
                               onClick={() =>
                                 updateQuantity(item.productVariantId, item.quantity + 1)
                               }
-                              className="flex size-6 cursor-pointer items-center justify-center rounded text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                            >
-                              <Plus className="h-3 w-3" aria-hidden="true" />
-                            </button>
+                              className="size-6 min-w-0 p-0"
+                            />
                           </div>
 
                           <div className="relative flex min-w-[76px] items-center justify-end">
-                            <span className="text-right font-mono text-xs font-semibold tabular-nums text-foreground transition-opacity group-hover:opacity-20">
+                            <span className="text-right font-mono text-xs font-semibold tabular-nums text-eta-heading transition-opacity group-hover:opacity-20">
                               {formatCurrency(lineTotal)}
                             </span>
-                            <button
+                            <IconButton
                               type="button"
+                              variant="soft"
+                              color="danger"
+                              size="sm"
+                              icon={<Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
                               onClick={() => removeItem(item.productVariantId)}
                               title="Hapus Item"
                               aria-label={`Hapus ${item.name}`}
-                              className="pointer-events-none absolute right-0 top-1/2 z-10 flex -translate-y-1/2 cursor-pointer items-center justify-center rounded-md border border-border bg-card/90 p-1.5 text-muted-foreground opacity-0 shadow-sm backdrop-blur-md transition-opacity hover:border-destructive/40 hover:bg-destructive/15 hover:text-destructive focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
-                            </button>
+                              className="pointer-events-none absolute right-0 top-1/2 z-10 -translate-y-1/2 opacity-0 transition-opacity focus-visible:pointer-events-auto focus-visible:opacity-100 group-hover:pointer-events-auto group-hover:opacity-100"
+                            />
                           </div>
                         </div>
                       </li>
@@ -1131,26 +1048,24 @@ export default function PosTerminalPage() {
               )}
             </div>
 
-            {/* Billing Breakdown & Payment Methods (Stitch style) */}
-            <div className="flex flex-col gap-3 border-t border-border bg-card p-4">
+            {/* Billing Breakdown & Payment Methods */}
+            <div className="flex flex-col gap-3 border-t border-eta-border bg-eta-surface p-4">
               {/* Summary Card */}
-              <div className="flex flex-col gap-1.5 rounded-md border border-border bg-muted/40 p-3">
-                <div className="flex items-center justify-between text-xs text-muted-foreground">
-                  <span>Subtotal ({totalItemCount} Item)</span>
-                  <span className="font-mono tabular-nums text-foreground">
-                    {formatCurrency(subtotalPreview)}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                  <label htmlFor="pos-discount">Diskon Keranjang</label>
-                  <div className="relative flex items-center">
-                    <span className="pointer-events-none absolute left-2 font-mono text-[10px] text-muted-foreground">
-                      Rp
+              <Card variant="filled" padding="sm">
+                <CardBody className="flex flex-col gap-1.5 p-0">
+                  <div className="flex items-center justify-between text-xs text-eta-muted">
+                    <span>Subtotal ({totalItemCount} Item)</span>
+                    <span className="font-mono tabular-nums text-eta-heading">
+                      {formatCurrency(subtotalPreview)}
                     </span>
-                    <input
+                  </div>
+                  <div className="flex items-center justify-between gap-2 text-xs text-eta-muted">
+                    <label htmlFor="pos-discount">Diskon Keranjang</label>
+                    <Input
                       id="pos-discount"
                       type="number"
                       inputMode="numeric"
+                      size="sm"
                       min={0}
                       placeholder="0"
                       value={discountInput}
@@ -1158,50 +1073,61 @@ export default function PosTerminalPage() {
                         setDiscountInput(e.target.value);
                         setCartDiscount(Number.parseFloat(e.target.value) || 0);
                       }}
-                      className="h-7 w-28 rounded border border-border bg-background pl-7 pr-2 text-right font-mono text-xs tabular-nums text-foreground focus-visible:border-ring focus-visible:outline-none"
+                      leftAdornment={
+                        <span className="font-mono text-[10px] text-eta-muted">Rp</span>
+                      }
+                      wrapperClassName="w-28"
+                      className="text-right font-mono text-xs tabular-nums"
                     />
                   </div>
-                </div>
-                <div className="my-1 h-px bg-border" />
-                <div className="flex items-baseline justify-between pt-0.5">
-                  <div>
-                    <span className="block text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                      Total Tagihan
-                    </span>
-                    <span className="font-mono text-[11px] text-muted-foreground tabular-nums">
-                      {totalItemCount} Barang Terdaftar
+                  <Divider spacing="none" className="my-1" />
+                  <div className="flex items-baseline justify-between pt-0.5">
+                    <div>
+                      <span className="block text-[10px] font-medium uppercase tracking-wider text-eta-muted">
+                        Total Tagihan
+                      </span>
+                      <span className="font-mono text-[11px] text-eta-muted tabular-nums">
+                        {totalItemCount} Barang Terdaftar
+                      </span>
+                    </div>
+                    <span className="font-mono text-2xl font-bold tracking-tight tabular-nums text-eta-heading">
+                      {formatCurrency(grandTotalPreview)}
                     </span>
                   </div>
-                  <span className="font-mono text-2xl font-bold tracking-tight tabular-nums text-foreground">
-                    {formatCurrency(grandTotalPreview)}
-                  </span>
-                </div>
-              </div>
+                </CardBody>
+              </Card>
 
-              {/* Payment Methods Selector (4-col shadcn cards) */}
+              {/* Payment Methods Selector */}
               <div>
-                <span className="mb-1.5 block text-[11px] font-medium text-muted-foreground">
+                <span className="mb-1.5 block text-[11px] font-medium text-eta-muted">
                   Pilih Metode Pembayaran
                 </span>
                 {paymentMethodsQuery.isLoading ? (
-                  <p role="status" className="text-xs text-muted-foreground">
-                    Memuat metode pembayaran...
-                  </p>
-                ) : paymentMethodsQuery.isError ? (
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-destructive">Gagal memuat metode pembayaran.</span>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="xs"
-                      onClick={() => void paymentMethodsQuery.refetch()}
-                      className="cursor-pointer"
-                    >
-                      Coba Lagi
-                    </Button>
+                  <div role="status" className="grid grid-cols-4 gap-1.5">
+                    <Skeleton variant="rounded" height={48} />
+                    <Skeleton variant="rounded" height={48} />
+                    <Skeleton variant="rounded" height={48} />
+                    <Skeleton variant="rounded" height={48} />
                   </div>
+                ) : paymentMethodsQuery.isError ? (
+                  <Alert
+                    status="error"
+                    variant="soft"
+                    size="sm"
+                    title="Gagal memuat metode pembayaran"
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => void paymentMethodsQuery.refetch()}
+                      >
+                        Coba Lagi
+                      </Button>
+                    }
+                  />
                 ) : methods.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-eta-muted">
                     Belum ada metode pembayaran aktif.
                   </p>
                 ) : (
@@ -1209,29 +1135,21 @@ export default function PosTerminalPage() {
                     {methods.slice(0, 8).map((m) => {
                       const selected = activeMethod?.id === m.id;
                       return (
-                        <button
+                        <Button
                           key={m.id}
                           type="button"
+                          size="sm"
+                          variant={selected ? "solid" : "outline"}
+                          color="primary"
                           aria-pressed={selected}
                           onClick={() => setSelectedMethodId(m.id)}
-                          className={cn(
-                            "flex cursor-pointer flex-col items-center justify-center rounded-md px-1 py-2 text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                            selected
-                              ? "bg-primary font-medium text-primary-foreground shadow-xs"
-                              : "border border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
-                          )}
+                          className="h-auto flex-col gap-0.5 px-1 py-2"
                         >
-                          <PaymentMethodIcon
-                            type={m.type}
-                            className={cn(
-                              "mb-0.5 h-4 w-4",
-                              selected ? "text-primary-foreground" : "text-muted-foreground"
-                            )}
-                          />
+                          <PaymentMethodIcon type={m.type} className="h-4 w-4" />
                           <span className="max-w-full truncate text-[11px] font-medium">
                             {m.name}
                           </span>
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
@@ -1242,7 +1160,7 @@ export default function PosTerminalPage() {
               {isCashMethod && (
                 <div className="flex flex-col gap-1.5">
                   <div className="flex items-center justify-between text-xs">
-                    <label htmlFor="pos-tendered" className="text-muted-foreground">
+                    <label htmlFor="pos-tendered" className="text-eta-muted">
                       Nominal Diterima
                     </label>
                     {tenderedAmount > 0 && (
@@ -1250,9 +1168,7 @@ export default function PosTerminalPage() {
                         role="status"
                         className={cn(
                           "font-mono text-[11px] font-medium tabular-nums",
-                          isCashInsufficient
-                            ? "text-destructive"
-                            : "text-emerald-600 dark:text-emerald-400"
+                          isCashInsufficient ? "text-eta-danger" : "text-eta-success"
                         )}
                       >
                         {isCashInsufficient
@@ -1263,76 +1179,82 @@ export default function PosTerminalPage() {
                   </div>
 
                   <div className="mb-0.5 grid grid-cols-4 gap-1.5">
-                    <button
+                    <Button
                       type="button"
-                      onClick={() => setTenderedInput(String(grandTotalPreview))}
-                      className={cn(
-                        "cursor-pointer rounded border py-1 text-center font-mono text-[11px] transition-colors",
+                      size="sm"
+                      variant={
                         tenderedAmount > 0 && tenderedAmount === grandTotalPreview
-                          ? "border-foreground/40 bg-muted font-semibold text-foreground"
-                          : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
-                      )}
+                          ? "soft"
+                          : "outline"
+                      }
+                      onClick={() => setTenderedInput(String(grandTotalPreview))}
+                      className="h-7 px-1 font-mono text-[11px]"
                     >
                       Uang Pas
-                    </button>
+                    </Button>
                     {QUICK_CASH_AMOUNTS.map((amount) => {
                       const activeChip = tenderedAmount === amount;
                       return (
-                        <button
+                        <Button
                           key={amount}
                           type="button"
+                          size="sm"
+                          variant={activeChip ? "soft" : "outline"}
                           onClick={() => setTenderedInput(String(amount))}
-                          className={cn(
-                            "cursor-pointer rounded border py-1 text-center font-mono text-[11px] tabular-nums transition-colors",
-                            activeChip
-                              ? "border-foreground/40 bg-muted font-semibold text-foreground"
-                              : "border-border bg-background text-muted-foreground hover:bg-muted hover:text-foreground"
-                          )}
+                          className="h-7 px-1 font-mono text-[11px] tabular-nums"
                         >
                           {amount.toLocaleString("id-ID")}
-                        </button>
+                        </Button>
                       );
                     })}
                   </div>
 
-                  <div className="relative flex items-center">
-                    <span className="pointer-events-none absolute left-3 font-mono text-xs font-semibold text-muted-foreground">
-                      Rp
-                    </span>
-                    <input
-                      id="pos-tendered"
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      placeholder="0"
-                      value={tenderedInput}
-                      onChange={(e) => setTenderedInput(e.target.value)}
-                      className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-9 font-mono text-sm font-semibold tabular-nums text-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30"
-                    />
-                    {tenderedAmount > 0 && !isCashInsufficient && (
-                      <CheckCircle2
-                        aria-hidden="true"
-                        className="pointer-events-none absolute right-2.5 h-4 w-4 text-emerald-600 dark:text-emerald-400"
-                      />
-                    )}
-                  </div>
+                  <Input
+                    id="pos-tendered"
+                    type="number"
+                    inputMode="numeric"
+                    size="md"
+                    min={0}
+                    placeholder="0"
+                    value={tenderedInput}
+                    onChange={(e) => setTenderedInput(e.target.value)}
+                    isInvalid={isCashInsufficient}
+                    leftAdornment={
+                      <span className="font-mono text-xs font-semibold text-eta-muted">
+                        Rp
+                      </span>
+                    }
+                    rightAdornment={
+                      tenderedAmount > 0 && !isCashInsufficient ? (
+                        <CheckCircle2
+                          aria-hidden="true"
+                          className="h-4 w-4 text-eta-success"
+                        />
+                      ) : undefined
+                    }
+                    className="font-mono text-sm font-semibold tabular-nums"
+                  />
                 </div>
               )}
 
-              {/* Primary Checkout Button Actions (Stitch style) */}
+              {/* Primary Checkout Button Actions */}
               <div className="flex items-center gap-2 pt-1">
-                <button
+                <IconButton
                   type="button"
+                  variant="outline"
+                  size="lg"
+                  icon={<Pause className="h-4 w-4" aria-hidden="true" />}
                   onClick={handleHold}
                   disabled={items.length === 0 || processing}
                   title="Tahan Pesanan (F4)"
                   aria-label="Tahan Pesanan"
-                  className="flex h-10 w-12 shrink-0 cursor-pointer items-center justify-center rounded-md border border-border bg-background text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-40"
-                >
-                  <Pause className="h-4 w-4" aria-hidden="true" />
-                </button>
-                <button
+                />
+                <Button
                   type="button"
+                  variant="solid"
+                  color="primary"
+                  size="lg"
+                  isLoading={processing}
                   onClick={handleCheckout}
                   disabled={
                     items.length === 0 ||
@@ -1340,43 +1262,46 @@ export default function PosTerminalPage() {
                     isCashInsufficient ||
                     !activeMethod
                   }
-                  className="inline-flex h-10 flex-[2] cursor-pointer items-center justify-center gap-2 rounded-md bg-primary px-4 text-xs font-semibold tracking-wide text-primary-foreground shadow-xs transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  rightIcon={
+                    !processing ? (
+                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    ) : undefined
+                  }
+                  className="flex-[2] font-semibold tracking-wide"
                 >
-                  <span>
-                    {processing
-                      ? "MEMPROSES..."
-                      : `BAYAR SEKARANG · ${formatCurrency(grandTotalPreview)}`}
-                  </span>
-                  {!processing && <ArrowRight className="h-4 w-4" aria-hidden="true" />}
-                </button>
+                  {processing
+                    ? "MEMPROSES..."
+                    : `BAYAR SEKARANG · ${formatCurrency(grandTotalPreview)}`}
+                </Button>
               </div>
             </div>
           </aside>
 
           {/* Mobile Sticky Checkout Bar */}
-          <div className="fixed inset-x-0 bottom-7 z-30 border-t border-border bg-card p-3 lg:hidden">
-            <button
+          <div className="fixed inset-x-0 bottom-7 z-30 border-t border-eta-border bg-eta-surface p-3 lg:hidden">
+            <Button
               type="button"
+              variant="solid"
+              color="primary"
+              size="lg"
               onClick={() => setTicketOpen(true)}
-              className="flex h-11 w-full cursor-pointer items-center justify-between rounded-md bg-primary px-4 text-xs font-semibold text-primary-foreground transition-colors hover:bg-primary/90"
+              className="w-full justify-between font-semibold"
             >
-              <span>
-                PESANAN AKTIF ({totalItemCount} ITEM)
-              </span>
+              <span>PESANAN AKTIF ({totalItemCount} ITEM)</span>
               <span className="font-mono text-sm tabular-nums">
                 {formatCurrency(grandTotalPreview)}
               </span>
-            </button>
+            </Button>
           </div>
         </main>
       )}
 
-      {/* Fixed Bottom Status & Keyboard Shortcut Bar (Stitch style) */}
-      <footer className="flex h-7 shrink-0 items-center justify-between border-t border-border bg-card px-4 text-[11px] text-muted-foreground">
+      {/* Fixed Bottom Status & Keyboard Shortcut Bar */}
+      <footer className="flex h-7 shrink-0 items-center justify-between border-t border-eta-border bg-eta-surface px-4 text-[11px] text-eta-muted">
         <div className="flex items-center gap-2">
           <span
             aria-hidden="true"
-            className="inline-flex size-2 rounded-full bg-emerald-500"
+            className="inline-flex size-2 rounded-full bg-eta-success"
           />
           <span className="hidden md:inline">
             Enterprise POS · {activeStore?.code ?? "Register"}
@@ -1384,511 +1309,54 @@ export default function PosTerminalPage() {
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-1">
-            <kbd className="rounded border border-border bg-muted px-1.5 py-0.2 font-mono text-[9px] text-foreground">
-              F1
-            </kbd>
+            <Kbd size="sm">F1</Kbd>
             <span>Cari</span>
           </div>
           <div className="flex items-center gap-1">
-            <kbd className="rounded border border-border bg-muted px-1.5 py-0.2 font-mono text-[9px] text-foreground">
-              F2
-            </kbd>
+            <Kbd size="sm">F2</Kbd>
             <span>Scan</span>
           </div>
           <div className="flex items-center gap-1">
-            <kbd className="rounded border border-border bg-muted px-1.5 py-0.2 font-mono text-[9px] text-foreground">
-              F4
-            </kbd>
+            <Kbd size="sm">F4</Kbd>
             <span>Tahan</span>
           </div>
           <div className="hidden items-center gap-1 sm:flex">
-            <kbd className="rounded border border-border bg-muted px-1.5 py-0.2 font-mono text-[9px] text-foreground">
-              F8
-            </kbd>
+            <Kbd size="sm">F8</Kbd>
             <span>Tunai</span>
           </div>
         </div>
       </footer>
 
-      {/* SCREEN 2: CUSTOMER SELECTOR SHEET (Stitch Right Slide-over Sheet) */}
-      <Sheet open={customerSheetOpen} onOpenChange={setCustomerSheetOpen}>
-        <SheetContent
-          side="right"
-          className="flex w-full flex-col gap-0 p-0 sm:max-w-[420px]"
-        >
-          <SheetHeader className="border-b border-border px-5 py-4">
-            <div className="flex items-center gap-2">
-              <SheetTitle className="text-base font-semibold tracking-tight">
-                Pilih Pelanggan
-              </SheetTitle>
-              <span className="rounded-full border border-border bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">
-                Customer ID
-              </span>
-            </div>
-            <SheetDescription className="text-xs">
-              Pilih customer terdaftar atau gunakan walk-in customer.
-            </SheetDescription>
-          </SheetHeader>
+      {/* Modular Overlays */}
+      <PosCustomerDrawer
+        open={customerSheetOpen}
+        onOpenChange={setCustomerSheetOpen}
+        selectedCustomerId={selectedCustomerId}
+        onSelectCustomer={setSelectedCustomerId}
+        customers={customers}
+        isLoading={customersQuery.isLoading}
+        isError={customersQuery.isError}
+        onRefetch={() => void customersQuery.refetch()}
+        customerSearch={customerSearch}
+        onCustomerSearchChange={setCustomerSearch}
+      />
 
-          {/* Search & Segment Filter Tabs */}
-          <div className="flex flex-col gap-3 border-b border-border/80 p-4">
-            <div className="relative flex items-center">
-              <label htmlFor="pos-customer-search" className="sr-only">
-                Cari pelanggan
-              </label>
-              <Search
-                aria-hidden="true"
-                className="pointer-events-none absolute left-3 h-4 w-4 text-muted-foreground"
-              />
-              <input
-                id="pos-customer-search"
-                type="search"
-                value={customerSearch}
-                onChange={(e) => setCustomerSearch(e.target.value)}
-                placeholder="Cari nama, no. HP, ID Member..."
-                className="h-9 w-full rounded-md border border-border bg-background pl-9 pr-14 text-xs text-foreground placeholder:text-muted-foreground focus-visible:border-ring focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 [&::-webkit-search-cancel-button]:hidden"
-              />
-              <kbd className="pointer-events-none absolute right-2 rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
-                ESC
-              </kbd>
-            </div>
+      <PosHeldDrawer
+        open={heldDrawerOpen}
+        onOpenChange={setHeldDrawerOpen}
+        heldSales={heldSales}
+        isLoading={heldSalesQuery.isLoading}
+        isError={heldSalesQuery.isError}
+        onRefetch={() => void heldSalesQuery.refetch()}
+        onResume={handleResumeHeld}
+      />
 
-            <div
-              role="group"
-              aria-label="Filter tipe pelanggan"
-              className="flex items-center gap-1.5 overflow-x-auto"
-            >
-              {(
-                [
-                  { id: "all", label: "Semua" },
-                  { id: "member", label: "Member" },
-                  { id: "registered", label: "Reguler" },
-                  { id: "wholesale", label: "Grosir / B2B" },
-                ] as const
-              ).map((tab) => {
-                const active = customerSegment === tab.id;
-                return (
-                  <button
-                    key={tab.id}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setCustomerSegment(tab.id)}
-                    className={cn(
-                      "cursor-pointer rounded-md px-2.5 py-1 text-[11px] font-medium whitespace-nowrap transition-colors",
-                      active
-                        ? "bg-primary text-primary-foreground"
-                        : "border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
-                    )}
-                  >
-                    {tab.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Customer List + Quick Add Toggle */}
-          <div className="flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
-            <button
-              type="button"
-              onClick={() => setQuickAddOpen((prev) => !prev)}
-              className="flex w-full cursor-pointer items-center justify-center gap-2 rounded-lg border border-dashed border-border py-2.5 px-3 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/40 hover:bg-muted/50 hover:text-foreground"
-            >
-              <UserPlus className="h-4 w-4" aria-hidden="true" />
-              <span>{quickAddOpen ? "Tutup Form Tambah Pelanggan" : "+ Tambah Pelanggan Baru"}</span>
-            </button>
-
-            {quickAddOpen && (
-              <form
-                onSubmit={handleQuickAddCustomer}
-                className="flex flex-col gap-2.5 rounded-lg border border-border bg-muted/40 p-3"
-              >
-                <div>
-                  <label
-                    htmlFor="quick-cust-name"
-                    className="mb-1 block text-[11px] font-medium text-muted-foreground"
-                  >
-                    Nama Lengkap
-                  </label>
-                  <input
-                    id="quick-cust-name"
-                    required
-                    value={newCustomerName}
-                    onChange={(e) => setNewCustomerName(e.target.value)}
-                    placeholder="Nama pelanggan..."
-                    className="h-9 w-full rounded-md border border-border bg-background px-2.5 text-xs text-foreground focus-visible:border-ring focus-visible:outline-none"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label
-                      htmlFor="quick-cust-phone"
-                      className="mb-1 block text-[11px] font-medium text-muted-foreground"
-                    >
-                      No. HP / WA
-                    </label>
-                    <input
-                      id="quick-cust-phone"
-                      type="tel"
-                      value={newCustomerPhone}
-                      onChange={(e) => setNewCustomerPhone(e.target.value)}
-                      placeholder="08..."
-                      className="h-9 w-full rounded-md border border-border bg-background px-2.5 font-mono text-xs text-foreground focus-visible:border-ring focus-visible:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      htmlFor="quick-cust-type"
-                      className="mb-1 block text-[11px] font-medium text-muted-foreground"
-                    >
-                      Tipe
-                    </label>
-                    <select
-                      id="quick-cust-type"
-                      value={newCustomerType}
-                      onChange={(e) =>
-                        setNewCustomerType(
-                          e.target.value as "registered" | "member" | "wholesale"
-                        )
-                      }
-                      className="h-9 w-full cursor-pointer rounded-md border border-border bg-background px-2 text-xs text-foreground focus-visible:border-ring focus-visible:outline-none"
-                    >
-                      <option value="registered">Reguler</option>
-                      <option value="member">Member</option>
-                      <option value="wholesale">Grosir / B2B</option>
-                    </select>
-                  </div>
-                </div>
-                <Button
-                  type="submit"
-                  size="sm"
-                  disabled={!newCustomerName.trim() || createCustomerMutation.isPending}
-                  className="mt-1 w-full cursor-pointer text-xs"
-                >
-                  {createCustomerMutation.isPending
-                    ? "Menyimpan..."
-                    : "Simpan & Terapkan ke Kasir"}
-                </Button>
-              </form>
-            )}
-
-            {/* Walk-in Customer Card */}
-            <div className="flex flex-col gap-2 pt-1">
-              <button
-                type="button"
-                onClick={() => setDraftCustomerId(null)}
-                className={cn(
-                  "group relative flex w-full cursor-pointer items-start justify-between gap-3 rounded-lg border p-3 text-left transition-colors",
-                  draftCustomerId === null
-                    ? "border-foreground/40 bg-muted/60"
-                    : "border-border bg-card/60 hover:border-foreground/25 hover:bg-card"
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-muted-foreground">
-                    <UserIcon className="h-4 w-4" aria-hidden="true" />
-                  </div>
-                  <div className="flex flex-col">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-foreground">
-                        Walk-in Customer
-                      </span>
-                      {selectedCustomerId === null && (
-                        <span className="rounded border border-emerald-500/30 bg-emerald-500/15 px-1.5 py-0.2 font-mono text-[10px] text-emerald-700 dark:text-emerald-400">
-                          Aktif Saat Ini
-                        </span>
-                      )}
-                    </div>
-                    <span className="mt-0.5 text-[11px] text-muted-foreground">
-                      Pelanggan umum tanpa keanggotaan
-                    </span>
-                    <span className="mt-1 font-mono text-[10px] text-muted-foreground">
-                      Tarif Normal · Tanpa Diskon Member
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className={cn(
-                    "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border",
-                    draftCustomerId === null
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border"
-                  )}
-                >
-                  {draftCustomerId === null && <Check className="h-3 w-3" aria-hidden="true" />}
-                </div>
-              </button>
-
-              {/* Registered / Member / Wholesale Customers */}
-              {customersQuery.isLoading ? (
-                <p role="status" className="py-8 text-center text-xs text-muted-foreground">
-                  Memuat daftar pelanggan...
-                </p>
-              ) : customersQuery.isError ? (
-                <div className="py-8 text-center">
-                  <p className="text-xs text-destructive">Gagal memuat data pelanggan.</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="xs"
-                    className="mt-2 cursor-pointer"
-                    onClick={() => void customersQuery.refetch()}
-                  >
-                    Coba Lagi
-                  </Button>
-                </div>
-              ) : filteredCustomers.length === 0 ? (
-                <p className="py-8 text-center text-xs text-muted-foreground">
-                  Tidak ada pelanggan yang cocok dengan filter.
-                </p>
-              ) : (
-                filteredCustomers.map((cust) => {
-                  const isDraftSelected = draftCustomerId === cust.id;
-                  const isCurrentActive = selectedCustomerId === cust.id;
-
-                  return (
-                    <button
-                      key={cust.id}
-                      type="button"
-                      onClick={() => setDraftCustomerId(cust.id)}
-                      className={cn(
-                        "group relative flex w-full cursor-pointer items-start justify-between gap-3 rounded-lg border p-3 text-left transition-colors",
-                        isDraftSelected
-                          ? "border-foreground/40 bg-muted/60"
-                          : "border-border bg-card/60 hover:border-foreground/25 hover:bg-card"
-                      )}
-                    >
-                      <div className="flex min-w-0 items-start gap-3">
-                        <div className="flex size-9 shrink-0 items-center justify-center rounded-full border border-border bg-muted text-xs font-semibold text-foreground">
-                          {getInitials(cust.name)}
-                        </div>
-                        <div className="flex min-w-0 flex-col">
-                          <div className="flex flex-wrap items-center gap-1.5">
-                            <span className="truncate text-xs font-semibold text-foreground">
-                              {cust.name}
-                            </span>
-                            <span className="rounded border border-border bg-muted px-1.5 py-0.2 font-mono text-[10px] text-muted-foreground">
-                              {getCustomerTypeLabel(cust.customer_type)}
-                            </span>
-                            {isCurrentActive && (
-                              <span className="rounded border border-emerald-500/30 bg-emerald-500/15 px-1.5 py-0.2 font-mono text-[10px] text-emerald-700 dark:text-emerald-400">
-                                Aktif
-                              </span>
-                            )}
-                          </div>
-                          <span className="mt-0.5 font-mono text-[11px] text-muted-foreground">
-                            {cust.phone ?? cust.code}
-                          </span>
-                          <div className="mt-1 flex flex-wrap items-center gap-1.5 font-mono text-[10px] text-muted-foreground">
-                            <span>{cust.code}</span>
-                            {cust.loyalty_points > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className="text-foreground/80">
-                                  Poin: {cust.loyalty_points.toLocaleString("id-ID")} pts
-                                </span>
-                              </>
-                            )}
-                            {cust.customer_type === "wholesale" &&
-                              Number.parseFloat(cust.credit_limit) > 0 && (
-                                <>
-                                  <span>•</span>
-                                  <span className="text-foreground/80">
-                                    Limit: {formatCurrency(cust.credit_limit)}
-                                  </span>
-                                </>
-                              )}
-                          </div>
-                        </div>
-                      </div>
-                      <div
-                        className={cn(
-                          "mt-0.5 flex size-5 shrink-0 items-center justify-center rounded-full border",
-                          isDraftSelected
-                            ? "border-primary bg-primary text-primary-foreground"
-                            : "border-border group-hover:border-foreground/40"
-                        )}
-                      >
-                        {isDraftSelected && <Check className="h-3 w-3" aria-hidden="true" />}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* Sticky Sheet Footer */}
-          <div className="flex items-center gap-2.5 border-t border-border bg-card p-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCustomerSheetOpen(false)}
-              className="h-9 flex-1 cursor-pointer text-xs"
-            >
-              Batal
-            </Button>
-            <Button
-              type="button"
-              onClick={applySelectedCustomer}
-              className="h-9 flex-1 cursor-pointer gap-1.5 text-xs font-semibold"
-            >
-              <span>Terapkan Pelanggan</span>
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </Button>
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Held Orders Sheet */}
-      <Sheet open={heldDrawerOpen} onOpenChange={setHeldDrawerOpen}>
-        <SheetContent side="right" className="flex w-full flex-col gap-0 p-0 sm:max-w-md">
-          <SheetHeader className="border-b border-border px-5 py-4">
-            <SheetTitle className="text-base font-semibold">
-              Held Orders ({heldCount})
-            </SheetTitle>
-            <SheetDescription className="text-xs">
-              Pesanan tertahan di outlet ini yang siap dilanjutkan.
-            </SheetDescription>
-          </SheetHeader>
-          <div className="flex-1 overflow-y-auto px-5">
-            {heldSalesQuery.isLoading ? (
-              <p role="status" className="py-12 text-center text-xs text-muted-foreground">
-                Memuat pesanan tertahan...
-              </p>
-            ) : heldSalesQuery.isError ? (
-              <div className="py-12 text-center">
-                <p className="text-xs text-destructive">Gagal memuat pesanan tertahan.</p>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-3 cursor-pointer"
-                  onClick={() => void heldSalesQuery.refetch()}
-                >
-                  Coba Lagi
-                </Button>
-              </div>
-            ) : heldSales.length === 0 ? (
-              <div className="py-12 text-center">
-                <p className="text-sm font-semibold">Tidak ada pesanan tertahan</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Gunakan tombol Tahan (F4) untuk menyimpan sementara pesanan aktif.
-                </p>
-              </div>
-            ) : (
-              <ul className="divide-y divide-border">
-                {heldSales.map((sale) => (
-                  <li
-                    key={sale.id}
-                    className="flex items-center justify-between gap-3 py-3.5"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate font-mono text-xs font-semibold">
-                        {sale.transaction_number}
-                      </p>
-                      <p className="font-mono text-xs text-muted-foreground tabular-nums">
-                        {formatCurrency(sale.grand_total)}
-                      </p>
-                    </div>
-                    <Button
-                      type="button"
-                      size="sm"
-                      className="cursor-pointer"
-                      onClick={() => handleResumeHeld(sale.id)}
-                    >
-                      Lanjutkan
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </SheetContent>
-      </Sheet>
-
-      {/* Thermal Receipt Dialog */}
-      <Dialog
-        open={receipt !== null}
-        onOpenChange={(open) => {
-          if (!open) setReceipt(null);
-        }}
-      >
-        <DialogContent className="gap-4 p-5 sm:max-w-md">
-          {receipt && (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-base font-semibold">
-                  Struk Transaksi
-                </DialogTitle>
-                <DialogDescription className="font-mono text-xs">
-                  {receipt.transaction_number}
-                </DialogDescription>
-              </DialogHeader>
-
-              <div className="flex items-baseline justify-between rounded-md border border-emerald-500/30 bg-emerald-500/15 px-4 py-3 text-emerald-700 dark:text-emerald-400">
-                <span className="text-xs font-semibold">Lunas · Kembalian</span>
-                <span className="font-mono text-xl font-bold tabular-nums">
-                  {formatCurrency(receipt.change_amount)}
-                </span>
-              </div>
-
-              <pre className="max-h-80 overflow-auto rounded-md border border-border bg-muted/40 px-4 py-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-foreground">
-                {receipt.thermal_text}
-              </pre>
-
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div
-                  role="group"
-                  aria-label="Ukuran kertas struk"
-                  className="flex items-center gap-1.5"
-                >
-                  {(["58mm", "80mm"] as const).map((size) => (
-                    <button
-                      key={size}
-                      type="button"
-                      aria-pressed={receiptPaper === size}
-                      onClick={() => setReceiptPaper(size)}
-                      className={cn(
-                        "cursor-pointer rounded-md px-3 py-1.5 font-mono text-xs font-medium transition-colors",
-                        receiptPaper === size
-                          ? "bg-primary text-primary-foreground"
-                          : "border border-border bg-card text-muted-foreground hover:bg-muted"
-                      )}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    className="cursor-pointer"
-                    onClick={() =>
-                      printThermalReceipt(
-                        receipt.thermal_text,
-                        receiptPaper,
-                        receipt.transaction_number
-                      )
-                    }
-                  >
-                    <Printer className="h-4 w-4" aria-hidden="true" />
-                    Cetak
-                  </Button>
-                  <Button
-                    type="button"
-                    className="cursor-pointer"
-                    onClick={() => setReceipt(null)}
-                  >
-                    Transaksi Baru
-                  </Button>
-                </div>
-              </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PosReceiptDialog
+        receipt={receipt}
+        onClose={() => setReceipt(null)}
+        paperSize={receiptPaper}
+        onPaperSizeChange={setReceiptPaper}
+      />
     </div>
   );
 }

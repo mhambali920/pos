@@ -2,39 +2,57 @@
 
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Plus, Search, Trash2 } from "lucide-react";
-import { toast } from "sonner";
-import { apiFetch, ApiError } from "@/lib/api";
-import type { SupplierItem } from "@/lib/types";
-import { formatCurrency } from "@/lib/utils";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { Building2, Pencil, Plus, Search, Trash2 } from "lucide-react";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  Badge,
+  Button,
+  Card,
+  CardBody,
+  CardHeader,
+  CardTitle,
   Dialog,
+  DialogBody,
   DialogContent,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@/components/ui/dialog";
-import {
+  EmptyState,
+  FormField,
+  FormLabel,
+  Heading,
+  IconButton,
+  Input,
+  Skeleton,
+  Switch,
   Table,
   TableBody,
   TableCell,
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+  Text,
+  useToast,
+} from "@eta-ui/react";
+import { apiFetch, ApiError } from "@/lib/api";
+import type { SupplierItem } from "@/lib/types";
+import { formatCurrency } from "@/lib/utils";
 
 export default function SuppliersPage() {
+  const { toast } = useToast();
   const queryClient = useQueryClient();
   const [search, setSearch] = useState("");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<SupplierItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<SupplierItem | null>(null);
   const [code, setCode] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
@@ -102,6 +120,7 @@ export default function SuppliersPage() {
     mutationFn: (id: number) => apiFetch(`/suppliers/${id}`, { method: "DELETE" }),
     onSuccess: () => {
       toast.success("Supplier deleted.");
+      setDeleteTarget(null);
       void queryClient.invalidateQueries({ queryKey: ["suppliers"] });
     },
     onError: (err) => toast.error(err instanceof ApiError ? err.message : "Delete failed."),
@@ -113,38 +132,59 @@ export default function SuppliersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Suppliers</h1>
-          <p className="text-sm text-muted-foreground">
+          <Heading as="h1" size="xl" weight="semibold">
+            Suppliers
+          </Heading>
+          <Text size="sm" variant="muted" className="mt-0.5">
             Manage vendor directory, payment terms, and outstanding balances.
-          </p>
+          </Text>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="relative w-64">
-            <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search supplier..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <Button onClick={openCreate}>
-            <Plus className="h-4 w-4" /> Add Supplier
+          <Input
+            placeholder="Search supplier..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            leftAdornment={<Search className="h-4 w-4" />}
+            wrapperClassName="w-64"
+          />
+          <Button
+            variant="solid"
+            color="primary"
+            leftIcon={<Plus className="h-4 w-4" />}
+            onClick={openCreate}
+          >
+            Add Supplier
           </Button>
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
+      <Card variant="elevated" padding="none">
+        <CardHeader className="px-6 pt-5 pb-3">
           <CardTitle>Supplier Directory</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardBody className="p-0">
           {suppliersQuery.isLoading ? (
-            <div className="h-24 animate-pulse rounded-md bg-muted" />
+            <div className="space-y-3 p-6">
+              <Skeleton variant="rounded" height={48} />
+              <Skeleton variant="rounded" height={48} />
+              <Skeleton variant="rounded" height={48} />
+            </div>
           ) : suppliers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No suppliers found.</p>
+            <div className="p-6">
+              <EmptyState
+                variant="bordered"
+                icon={<Building2 className="h-6 w-6" />}
+                title="No suppliers found"
+                description="Add your first vendor to manage purchasing and balances."
+                action={
+                  <Button variant="solid" color="primary" size="sm" onClick={openCreate}>
+                    Add Supplier
+                  </Button>
+                }
+              />
+            </div>
           ) : (
-            <Table>
+            <Table variant="hoverable">
               <TableHeader>
                 <TableRow>
                   <TableHead>Code</TableHead>
@@ -152,7 +192,7 @@ export default function SuppliersPage() {
                   <TableHead>Contact</TableHead>
                   <TableHead>Terms</TableHead>
                   <TableHead>Balance</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead align="right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -160,33 +200,33 @@ export default function SuppliersPage() {
                   <TableRow key={s.id}>
                     <TableCell className="font-mono text-xs">{s.code}</TableCell>
                     <TableCell className="font-medium">{s.company_name}</TableCell>
-                    <TableCell className="text-muted-foreground">
+                    <TableCell className="text-eta-muted">
                       {s.contact_person ?? "—"} {s.phone ? `(${s.phone})` : ""}
                     </TableCell>
                     <TableCell>
-                      <Badge variant="muted">NET {s.payment_terms_days}</Badge>
+                      <Badge variant="soft" color="neutral">
+                        NET {s.payment_terms_days}
+                      </Badge>
                     </TableCell>
-                    <TableCell className="font-medium font-mono">
+                    <TableCell className="font-mono font-medium">
                       {formatCurrency(s.balance)}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell align="right">
                       <div className="inline-flex items-center gap-1">
-                        <Button
-                          size="icon"
+                        <IconButton
+                          icon={<Pencil className="h-4 w-4" />}
                           variant="ghost"
+                          size="sm"
                           aria-label="Edit supplier"
                           onClick={() => openEdit(s)}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="icon"
+                        />
+                        <IconButton
+                          icon={<Trash2 className="h-4 w-4 text-eta-danger" />}
                           variant="ghost"
+                          size="sm"
                           aria-label="Delete supplier"
-                          onClick={() => deleteMutation.mutate(s.id)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                          onClick={() => setDeleteTarget(s)}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
@@ -194,7 +234,7 @@ export default function SuppliersPage() {
               </TableBody>
             </Table>
           )}
-        </CardContent>
+        </CardBody>
       </Card>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -202,51 +242,64 @@ export default function SuppliersPage() {
           <DialogHeader>
             <DialogTitle>{editing ? "Edit Supplier" : "Add Supplier"}</DialogTitle>
           </DialogHeader>
-          <div className="grid gap-3 py-2 sm:grid-cols-2">
-            <div className="space-y-1.5">
-              <Label>Code</Label>
-              <Input value={code} onChange={(e) => setCode(e.target.value)} placeholder="SUP-001" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Payment Terms (Days)</Label>
+          <DialogBody className="grid gap-3 sm:grid-cols-2">
+            <FormField label="Code">
               <Input
+                id="sup-code"
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="SUP-001"
+              />
+            </FormField>
+            <FormField label="Payment Terms (Days)">
+              <Input
+                id="sup-terms"
                 type="number"
                 min="0"
                 value={paymentTermsDays}
                 onChange={(e) => setPaymentTermsDays(e.target.value)}
               />
-            </div>
-            <div className="sm:col-span-2 space-y-1.5">
-              <Label>Company Name</Label>
+            </FormField>
+            <FormField label="Company Name" className="sm:col-span-2">
               <Input
+                id="sup-company"
                 value={companyName}
                 onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="PT Sumber Makmur"
               />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Contact Person</Label>
-              <Input value={contactPerson} onChange={(e) => setContactPerson(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Phone</Label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
-            </div>
-            <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <Label>Active</Label>
+            </FormField>
+            <FormField label="Contact Person">
+              <Input
+                id="sup-contact"
+                value={contactPerson}
+                onChange={(e) => setContactPerson(e.target.value)}
+              />
+            </FormField>
+            <FormField label="Phone">
+              <Input id="sup-phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+            </FormField>
+            <FormField label="Email">
+              <Input
+                id="sup-email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </FormField>
+            <div className="flex items-center justify-between rounded-lg border border-eta-border p-3">
+              <FormLabel>Active</FormLabel>
               <Switch checked={isActive} onCheckedChange={setIsActive} />
             </div>
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
             <Button
-              disabled={saveMutation.isPending || !code.trim() || !companyName.trim()}
+              variant="solid"
+              color="primary"
+              isLoading={saveMutation.isPending}
+              disabled={!code.trim() || !companyName.trim()}
               onClick={() => saveMutation.mutate()}
             >
               Save
@@ -254,6 +307,35 @@ export default function SuppliersPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(o) => !o && setDeleteTarget(null)}>
+        <AlertDialogContent intent="danger">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Supplier</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete{" "}
+              <span className="font-medium text-eta-heading">{deleteTarget?.company_name}</span>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+              <Button variant="outline">Cancel</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+              <Button
+                variant="solid"
+                color="danger"
+                isLoading={deleteMutation.isPending}
+                onClick={() => {
+                  if (deleteTarget) deleteMutation.mutate(deleteTarget.id);
+                }}
+              >
+                Delete
+              </Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
