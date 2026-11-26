@@ -34,6 +34,114 @@ import type { DashboardPayload } from "@/lib/types";
 import { formatCurrency } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
+const SHORT_MONTHS = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+] as const;
+
+function parseLocalIso(iso: string): Date | null {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso.trim());
+  if (!match) return null;
+  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+}
+
+function toIsoDate(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+function addDays(date: Date, days: number): Date {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate() + days);
+}
+
+function diffDays(start: Date, end: Date): number {
+  const msPerDay = 86_400_000;
+  return Math.round((end.getTime() - start.getTime()) / msPerDay);
+}
+
+function formatAxisCompactIdr(value: number): string {
+  if (value === 0) return "0";
+  const abs = Math.abs(value);
+  const sign = value < 0 ? "-" : "";
+  if (abs >= 1_000_000_000) {
+    return `${sign}${(abs / 1_000_000_000).toFixed(abs % 1_000_000_000 === 0 ? 0 : 1)}M`;
+  }
+  if (abs >= 1_000_000) {
+    return `${sign}${(abs / 1_000_000).toFixed(abs % 1_000_000 === 0 ? 0 : 1)}jt`;
+  }
+  if (abs >= 1_000) {
+    return `${sign}${Math.round(abs / 1_000)}rb`;
+  }
+  return `${sign}${abs}`;
+}
+
+function buildDailyChartSeries(
+  rawTrend: Array<{ date: string; revenue: string }>,
+  period?: { from: string; to: string },
+  hasCustomFilter = false
+): Array<{ date: string; revenue: number }> {
+  if (rawTrend.length === 0) return [];
+
+  const revenueByIso = new Map<string, number>();
+  let earliestSale: Date | null = null;
+  let latestSale: Date | null = null;
+
+  for (const pt of rawTrend) {
+    const val = Number.parseFloat(pt.revenue) || 0;
+    revenueByIso.set(pt.date, val);
+    const parsed = parseLocalIso(pt.date);
+    if (parsed) {
+      if (!earliestSale || parsed < earliestSale) earliestSale = parsed;
+      if (!latestSale || parsed > latestSale) latestSale = parsed;
+    }
+  }
+
+  const endDate = (period?.to ? parseLocalIso(period.to) : null) ?? latestSale ?? new Date();
+  const minWindowStart = addDays(endDate, -13); // Minimum 14 slots so bars stay sleek (~28px)
+
+  let startDate: Date;
+  if (hasCustomFilter && period?.from) {
+    const customStart = parseLocalIso(period.from) ?? minWindowStart;
+    startDate = customStart < minWindowStart ? customStart : minWindowStart;
+  } else if (earliestSale && earliestSale < minWindowStart) {
+    startDate = earliestSale;
+  } else {
+    startDate = minWindowStart;
+  }
+
+  const totalDays = Math.min(60, Math.max(1, diffDays(startDate, endDate) + 1));
+  const compactLabel = totalDays > 14;
+  const series: Array<{ date: string; revenue: number }> = [];
+
+  for (let i = 0; i < totalDays; i++) {
+    const cur = addDays(startDate, i);
+    const iso = toIsoDate(cur);
+    const dayNum = String(cur.getDate()).padStart(2, "0");
+    const label = compactLabel
+      ? `${dayNum}/${String(cur.getMonth() + 1).padStart(2, "0")}`
+      : `${cur.getDate()} ${SHORT_MONTHS[cur.getMonth()]}`;
+
+    series.push({
+      date: label,
+      revenue: revenueByIso.get(iso) ?? 0,
+    });
+  }
+
+  return series;
+}
+
 export default function DashboardHomePage() {
   const { user, activeStoreId } = useAuthStore();
   const activeStore = user?.stores?.find((s) => s.id === activeStoreId);
@@ -55,10 +163,11 @@ export default function DashboardHomePage() {
   });
 
   const data = dashboardQuery.data?.data;
-  const chartData = (data?.daily_trend ?? []).map((pt) => ({
-    date: pt.date,
-    revenue: Number.parseFloat(pt.revenue) || 0,
-  }));
+  const chartData = buildDailyChartSeries(
+    data?.daily_trend ?? [],
+    data?.period,
+    Boolean(dateFrom || dateTo)
+  );
 
   return (
     <div className="space-y-6">
@@ -231,7 +340,9 @@ export default function DashboardHomePage() {
               series={[{ key: "revenue", label: "Revenue", color: "primary" }]}
               height={260}
               variant="surface"
-              valueFormatter={(value) => formatCurrency(value)}
+              valueFormatter={(value, seriesKey) =>
+                seriesKey ? formatCurrency(value) : formatAxisCompactIdr(value)
+              }
               isLoading={dashboardQuery.isLoading}
               emptyState={
                 <EmptyState

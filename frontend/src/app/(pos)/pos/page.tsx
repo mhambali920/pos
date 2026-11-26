@@ -41,9 +41,9 @@ import {
   Input,
   Kbd,
   Skeleton,
-  ThemeToggle,
   useToast,
 } from "@eta-ui/react";
+import { ClientThemeToggle } from "@/components/shared/client-theme-toggle";
 import { apiFetch, ApiError } from "@/lib/api";
 import type {
   CategoryItem,
@@ -504,7 +504,7 @@ export default function PosTerminalPage() {
 
         {/* Right: Theme Toggle & Held Orders */}
         <div className="flex items-center gap-1.5">
-          <ThemeToggle variant="icon" size="sm" />
+          <ClientThemeToggle variant="icon" size="sm" />
           <Button
             type="button"
             variant="ghost"

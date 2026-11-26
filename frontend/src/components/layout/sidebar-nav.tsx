@@ -20,6 +20,7 @@ import {
   Wallet,
 } from "lucide-react";
 import {
+  Avatar,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -30,6 +31,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@eta-ui/react";
 import { useAuthStore } from "@/stores/auth-store";
 
@@ -69,33 +71,40 @@ export const NAV_GROUPS = [
 export function SidebarNav() {
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
 
   return (
-    <Sidebar collapsible="icon">
-      <SidebarHeader className="border-b border-eta-border">
+    <Sidebar
+      variant="inset"
+      collapsible="icon"
+      className="max-md:border-r max-md:border-eta-border max-md:bg-eta-surface md:sticky md:top-0 md:h-dvh md:shrink-0 md:py-1.5 md:pl-1.5"
+    >
+      <SidebarHeader className="flex-col items-stretch gap-2 border-none px-3 pt-3 pb-1">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg" title="Enterprise POS">
+            <SidebarMenuButton asChild size="md" title="Enterprise POS" className="rounded-xl px-2">
               <Link href="/">
-                <div className="flex aspect-square size-8 shrink-0 items-center justify-center rounded-lg bg-eta-primary text-xs font-bold text-eta-inverse">
+                <div className="flex aspect-square size-7 shrink-0 items-center justify-center rounded-lg bg-eta-primary text-xs font-bold text-eta-inverse">
                   EP
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold text-eta-heading">Enterprise POS</span>
-                  <span className="truncate text-xs text-eta-muted">Retail Operations</span>
-                </div>
+                <span className="truncate text-sm font-semibold text-eta-heading">
+                  Enterprise POS
+                </span>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-2.5 py-2">
         {NAV_GROUPS.map((group) => (
           <SidebarGroup key={group.label}>
-            <SidebarGroupLabel>{group.label}</SidebarGroupLabel>
+            <SidebarGroupLabel className="px-2.5 text-[11px] font-medium tracking-wider text-eta-muted/80">
+              {group.label}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
+              <SidebarMenu className="gap-0.5">
                 {group.items.map((item) => {
                   const Icon = item.icon;
                   const isActive =
@@ -103,7 +112,12 @@ export function SidebarNav() {
 
                   return (
                     <SidebarMenuItem key={item.href}>
-                      <SidebarMenuButton asChild isActive={isActive} title={item.label}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive}
+                        title={item.label}
+                        className="rounded-lg"
+                      >
                         <Link href={item.href}>
                           <Icon className="h-4 w-4 shrink-0" />
                           <span>{item.label}</span>
@@ -118,13 +132,24 @@ export function SidebarNav() {
         ))}
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-eta-border">
-        <div className="px-2 py-1.5 text-xs text-eta-muted">
-          <div className="truncate font-medium text-eta-heading">
-            {user?.name ?? "Guest"}
+      <SidebarFooter className="border-none px-3 pt-1 pb-3">
+        {!isCollapsed ? (
+          <div className="flex w-full items-center gap-2.5 rounded-xl bg-eta-base/70 px-2.5 py-2 ring-1 ring-eta-border/60">
+            <Avatar name={user?.name ?? "Guest"} size="sm" />
+            <div className="min-w-0 flex-1 text-xs leading-tight">
+              <div className="truncate font-semibold text-eta-heading">
+                {user?.name ?? "Guest"}
+              </div>
+              <div className="truncate text-eta-muted">
+                {user?.roles[0] ?? "Not signed in"}
+              </div>
+            </div>
           </div>
-          <div className="truncate">{user?.roles[0] ?? "Not signed in"}</div>
-        </div>
+        ) : (
+          <div className="flex w-full justify-center">
+            <Avatar name={user?.name ?? "Guest"} size="sm" />
+          </div>
+        )}
       </SidebarFooter>
     </Sidebar>
   );

@@ -3,7 +3,28 @@
 
 @custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
+:root {
+  --eta-bg-shell: #efece6;
+  --eta-bg-surface: #ffffff;
+  --eta-radius-md: 10px;
+  --eta-radius-lg: 14px;
+}
+
+[data-theme="dark"],
+.dark {
+  --eta-bg-shell: #111318;
+  --eta-bg-surface: #22252e;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --eta-bg-shell: #111318;
+    --eta-bg-surface: #22252e;
+  }
+}
+
 @theme inline {
+  --color-eta-shell: var(--eta-bg-shell);
   --color-eta-base: var(--eta-bg-base);
   --color-eta-surface: var(--eta-bg-surface);
   --color-eta-subtle: var(--eta-bg-subtle);

@@ -14,9 +14,9 @@ import {
   CardTitle,
   FormField,
   Input,
-  ThemeToggle,
   useToast,
 } from "@eta-ui/react";
+import { ClientThemeToggle } from "@/components/shared/client-theme-toggle";
 import { apiFetch, ApiError } from "@/lib/api";
 import type { AuthUser } from "@/lib/types";
 import { useAuthStore } from "@/stores/auth-store";
@@ -71,7 +71,7 @@ export default function LoginPage() {
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-eta-base p-4">
       <div className="absolute right-4 top-4">
-        <ThemeToggle variant="icon" size="sm" />
+        <ClientThemeToggle variant="icon" size="sm" />
       </div>
 
       <Card variant="elevated" elevation="md" padding="lg" className="w-full max-w-md">
