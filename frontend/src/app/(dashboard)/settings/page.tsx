@@ -24,6 +24,12 @@ import {
   Input,
   Skeleton,
   Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   useToast,
 } from "@eta-ui/react";
 import { apiFetch, ApiError } from "@/lib/api";
@@ -123,37 +129,41 @@ export default function SettingsPage() {
         </Button>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Stores / Outlets</CardTitle>
-          <CardDescription>Outlets accessible by your account.</CardDescription>
-        </CardHeader>
-        <CardBody>
-          {storesQuery.isLoading ? (
-            <Skeleton variant="rounded" height={96} />
-          ) : stores.length === 0 ? (
-            <EmptyState
-              variant="bordered"
-              size="sm"
-              title="No stores configured."
-              description="Add an outlet to configure store policies."
-            />
-          ) : (
-            <div className="divide-y divide-eta-border">
+      <div className="space-y-3">
+        <div>
+          <h2 className="text-base font-semibold text-eta-heading">Stores / Outlets</h2>
+          <p className="text-xs text-eta-muted">Outlets accessible by your account.</p>
+        </div>
+        {storesQuery.isLoading ? (
+          <Skeleton variant="rounded" height={96} />
+        ) : stores.length === 0 ? (
+          <EmptyState
+            variant="bordered"
+            size="sm"
+            title="No stores configured."
+            description="Add an outlet to configure store policies."
+          />
+        ) : (
+          <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Outlet Name</TableHead>
+                <TableHead>Timezone &amp; Address</TableHead>
+                <TableHead>Stock Policy</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead align="right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
               {stores.map((store) => (
-                <div
-                  key={store.id}
-                  className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <div>
-                    <div className="font-medium text-eta-heading">
-                      {store.code} — {store.name}
-                    </div>
-                    <div className="text-xs text-eta-muted">
-                      Timezone: {store.timezone} {store.address ? `• ${store.address}` : ""}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
+                <TableRow key={store.id}>
+                  <TableCell className="font-mono text-xs font-semibold">{store.code}</TableCell>
+                  <TableCell className="font-medium">{store.name}</TableCell>
+                  <TableCell className="text-xs text-eta-muted">
+                    {store.timezone} {store.address ? `• ${store.address}` : ""}
+                  </TableCell>
+                  <TableCell>
                     <Badge
                       variant="soft"
                       color={store.allow_negative_stock ? "warning" : "success"}
@@ -161,9 +171,13 @@ export default function SettingsPage() {
                     >
                       {store.allow_negative_stock ? "Negative Stock Allowed" : "Strict Stock Guard"}
                     </Badge>
+                  </TableCell>
+                  <TableCell>
                     <Badge variant="soft" color="neutral" size="sm">
                       {store.status ?? "active"}
                     </Badge>
+                  </TableCell>
+                  <TableCell align="right">
                     <IconButton
                       icon={<Pencil className="h-4 w-4" />}
                       size="sm"
@@ -171,13 +185,13 @@ export default function SettingsPage() {
                       aria-label="Edit store"
                       onClick={() => openEditStore(store)}
                     />
-                  </div>
-                </div>
+                  </TableCell>
+                </TableRow>
               ))}
-            </div>
-          )}
-        </CardBody>
-      </Card>
+            </TableBody>
+          </Table>
+        )}
+      </div>
 
       <Card>
         <CardHeader>

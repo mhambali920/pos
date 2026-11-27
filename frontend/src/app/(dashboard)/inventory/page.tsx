@@ -6,10 +6,6 @@ import { ArrowLeftRight, Plus, RefreshCw } from "lucide-react";
 import {
   Badge,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogBody,
   DialogContent,
@@ -249,143 +245,135 @@ export default function InventoryPage() {
           <TabsTrigger value="expired">Expired Alerts</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <CardTitle>Current Stock Balances</CardTitle>
-              <Switch
-                id="low-stock-toggle"
-                label="Low stock only"
-                checked={lowStockOnly}
-                onCheckedChange={setLowStockOnly}
-              />
-            </CardHeader>
-            <CardBody>
-              {overviewQuery.isLoading ? (
-                <Skeleton variant="rounded" height={96} />
-              ) : (overviewQuery.data?.data ?? []).length === 0 ? (
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No stock records found"
-                  description="Stock balances will appear here once inventory is added."
-                />
-              ) : (
-                <Table variant="hoverable">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Warehouse</TableHead>
-                      <TableHead>SKU / Product</TableHead>
-                      <TableHead>On Hand</TableHead>
-                      <TableHead>Available</TableHead>
-                      <TableHead>MAC Unit Cost</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(overviewQuery.data?.data ?? []).map((item) => (
-                      <TableRow key={item.id}>
-                        <TableCell>{item.warehouse?.name ?? "—"}</TableCell>
-                        <TableCell>
-                          <div className="font-mono text-xs">{item.variant?.sku ?? "—"}</div>
-                          <div className="text-xs text-eta-muted">{item.variant?.name ?? ""}</div>
-                        </TableCell>
-                        <TableCell className="font-mono">{item.qty_on_hand}</TableCell>
-                        <TableCell className="font-mono font-medium">
-                          {item.qty_available}
-                        </TableCell>
-                        <TableCell className="font-mono">
-                          {formatCurrency(item.unit_cost ?? "0")}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardBody>
-          </Card>
+        <TabsContent value="overview" className="space-y-3 pt-2">
+          <div className="flex items-center justify-end">
+            <Switch
+              id="low-stock-toggle"
+              label="Low stock only"
+              checked={lowStockOnly}
+              onCheckedChange={setLowStockOnly}
+            />
+          </div>
+          {overviewQuery.isLoading ? (
+            <Skeleton variant="rounded" height={96} />
+          ) : (overviewQuery.data?.data ?? []).length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No stock records found"
+              description="Stock balances will appear here once inventory is added."
+            />
+          ) : (
+            <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Warehouse</TableHead>
+                  <TableHead>SKU / Product</TableHead>
+                  <TableHead>On Hand</TableHead>
+                  <TableHead>Available</TableHead>
+                  <TableHead>MAC Unit Cost</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(overviewQuery.data?.data ?? []).map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell>{item.warehouse?.name ?? "—"}</TableCell>
+                    <TableCell>
+                      <div className="font-mono text-xs">{item.variant?.sku ?? "—"}</div>
+                      <div className="text-xs text-eta-muted">{item.variant?.name ?? ""}</div>
+                    </TableCell>
+                    <TableCell className="font-mono">{item.qty_on_hand}</TableCell>
+                    <TableCell className="font-mono font-medium">
+                      {item.qty_available}
+                    </TableCell>
+                    <TableCell className="font-mono">
+                      {formatCurrency(item.unit_cost ?? "0")}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
 
-        <TabsContent value="movements">
-          <Card>
-            <CardHeader>
-              <CardTitle>Immutable Stock Movements Ledger</CardTitle>
-            </CardHeader>
-            <CardBody>
-              {movementsQuery.isLoading ? (
-                <Skeleton variant="rounded" height={96} />
-              ) : (movementsQuery.data?.data ?? []).length === 0 ? (
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No movements recorded yet"
-                  description="Stock movements from sales, purchases, adjustments, and transfers will appear here."
-                />
-              ) : (
-                <Table variant="hoverable">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Type</TableHead>
-                      <TableHead>SKU</TableHead>
-                      <TableHead>Before</TableHead>
-                      <TableHead>Change</TableHead>
-                      <TableHead>After</TableHead>
-                      <TableHead>Notes</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(movementsQuery.data?.data ?? []).map((m) => (
-                      <TableRow key={m.id}>
-                        <TableCell>
-                          <Badge variant="soft" color="neutral">
-                            {m.movement_type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">{m.variant?.sku ?? "—"}</TableCell>
-                        <TableCell className="font-mono">{m.qty_before}</TableCell>
-                        <TableCell className="font-mono font-semibold">{m.qty_change}</TableCell>
-                        <TableCell className="font-mono">{m.qty_after}</TableCell>
-                        <TableCell className="text-xs text-eta-muted">{m.notes ?? "—"}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardBody>
-          </Card>
+        <TabsContent value="movements" className="pt-2">
+          {movementsQuery.isLoading ? (
+            <Skeleton variant="rounded" height={96} />
+          ) : (movementsQuery.data?.data ?? []).length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No movements recorded yet"
+              description="Stock movements from sales, purchases, adjustments, and transfers will appear here."
+            />
+          ) : (
+            <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Type</TableHead>
+                  <TableHead>SKU</TableHead>
+                  <TableHead>Before</TableHead>
+                  <TableHead>Change</TableHead>
+                  <TableHead>After</TableHead>
+                  <TableHead>Notes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(movementsQuery.data?.data ?? []).map((m) => (
+                  <TableRow key={m.id}>
+                    <TableCell>
+                      <Badge variant="soft" color="neutral">
+                        {m.movement_type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="font-mono text-xs">{m.variant?.sku ?? "—"}</TableCell>
+                    <TableCell className="font-mono">{m.qty_before}</TableCell>
+                    <TableCell className="font-mono font-semibold">{m.qty_change}</TableCell>
+                    <TableCell className="font-mono">{m.qty_after}</TableCell>
+                    <TableCell className="text-xs text-eta-muted">{m.notes ?? "—"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
 
-        <TabsContent value="adjustments">
-          <Card>
-            <CardHeader>
-              <CardTitle>Stock Adjustments</CardTitle>
-            </CardHeader>
-            <CardBody className="divide-y divide-eta-border">
-              {(adjustmentsQuery.data?.data ?? []).length === 0 ? (
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No stock adjustments yet"
-                  description="Create a stock adjustment draft to reconcile physical counts."
-                />
-              ) : (
-                (adjustmentsQuery.data?.data ?? []).map((adj) => (
-                  <div
-                    key={adj.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-mono text-xs font-semibold">{adj.adjustment_number}</div>
-                      <div className="text-xs text-eta-muted">
-                        {adj.warehouse?.name ?? "Warehouse"} • {adj.reason}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
+        <TabsContent value="adjustments" className="pt-2">
+          {(adjustmentsQuery.data?.data ?? []).length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No stock adjustments yet"
+              description="Create a stock adjustment draft to reconcile physical counts."
+            />
+          ) : (
+            <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Adjustment #</TableHead>
+                  <TableHead>Warehouse</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead align="right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(adjustmentsQuery.data?.data ?? []).map((adj) => (
+                  <TableRow key={adj.id}>
+                    <TableCell className="font-mono text-xs font-semibold">
+                      {adj.adjustment_number}
+                    </TableCell>
+                    <TableCell>{adj.warehouse?.name ?? "Warehouse"}</TableCell>
+                    <TableCell className="text-eta-muted">{adj.reason}</TableCell>
+                    <TableCell>
                       <Badge
                         variant="soft"
                         color={adj.status === "approved" ? "success" : "warning"}
                       >
                         {adj.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell align="right">
                       {adj.status === "draft" && (
                         <Button
                           variant="solid"
@@ -396,43 +384,47 @@ export default function InventoryPage() {
                           Approve
                         </Button>
                       )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardBody>
-          </Card>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
 
-        <TabsContent value="transfers">
-          <Card>
-            <CardHeader>
-              <CardTitle>Inter-Warehouse Transfers</CardTitle>
-            </CardHeader>
-            <CardBody className="divide-y divide-eta-border">
-              {(transfersQuery.data?.data ?? []).length === 0 ? (
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No stock transfers yet"
-                  description="Create a stock transfer to move inventory between warehouses."
-                />
-              ) : (
-                (transfersQuery.data?.data ?? []).map((t) => (
-                  <div
-                    key={t.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-mono text-xs font-semibold">{t.transfer_number}</div>
-                      <div className="text-xs text-eta-muted">
-                        {t.from_warehouse?.name ?? "?"} → {t.to_warehouse?.name ?? "?"}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
+        <TabsContent value="transfers" className="pt-2">
+          {(transfersQuery.data?.data ?? []).length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No stock transfers yet"
+              description="Create a stock transfer to move inventory between warehouses."
+            />
+          ) : (
+            <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Transfer #</TableHead>
+                  <TableHead>Route</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead align="right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(transfersQuery.data?.data ?? []).map((t) => (
+                  <TableRow key={t.id}>
+                    <TableCell className="font-mono text-xs font-semibold">
+                      {t.transfer_number}
+                    </TableCell>
+                    <TableCell className="text-eta-muted">
+                      {t.from_warehouse?.name ?? "?"} → {t.to_warehouse?.name ?? "?"}
+                    </TableCell>
+                    <TableCell>
                       <Badge variant="soft" color={t.status === "received" ? "success" : "warning"}>
                         {t.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell align="right">
                       {t.status === "draft" && (
                         <Button
                           size="sm"
@@ -454,44 +446,50 @@ export default function InventoryPage() {
                           Receive
                         </Button>
                       )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardBody>
-          </Card>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
 
-        <TabsContent value="expired">
-          <Card>
-            <CardHeader>
-              <CardTitle>Expired / Near-Expiry Batches (30 Days)</CardTitle>
-            </CardHeader>
-            <CardBody className="divide-y divide-eta-border">
-              {(expiredQuery.data?.data ?? []).length === 0 ? (
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No expiring batches found"
-                  description="All tracked batches are within safe expiration windows."
-                />
-              ) : (
-                (expiredQuery.data?.data ?? []).map((b) => (
-                  <div key={b.id} className="flex items-center justify-between py-2.5 text-sm">
-                    <div>
-                      <div className="font-mono text-xs font-semibold">{b.batch_number}</div>
-                      <div className="text-xs text-eta-muted">
-                        {b.sku} — {b.variant_name}
-                      </div>
-                    </div>
-                    <Badge variant="soft" color={b.is_expired ? "danger" : "warning"}>
-                      {b.expired_at ?? "—"}
-                    </Badge>
-                  </div>
-                ))
-              )}
-            </CardBody>
-          </Card>
+        <TabsContent value="expired" className="pt-2">
+          {(expiredQuery.data?.data ?? []).length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No expiring batches found"
+              description="All tracked batches are within safe expiration windows."
+            />
+          ) : (
+            <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Batch #</TableHead>
+                  <TableHead>SKU / Product</TableHead>
+                  <TableHead align="right">Expiration Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(expiredQuery.data?.data ?? []).map((b) => (
+                  <TableRow key={b.id}>
+                    <TableCell className="font-mono text-xs font-semibold">
+                      {b.batch_number}
+                    </TableCell>
+                    <TableCell className="text-eta-muted">
+                      {b.sku} — {b.variant_name}
+                    </TableCell>
+                    <TableCell align="right">
+                      <Badge variant="soft" color={b.is_expired ? "danger" : "warning"}>
+                        {b.expired_at ?? "—"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
       </Tabs>
 

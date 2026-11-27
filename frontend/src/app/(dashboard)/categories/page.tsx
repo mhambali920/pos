@@ -205,211 +205,194 @@ export default function CategoriesAndCatalogConfigPage() {
         </CardBody>
       </Card>
 
-      <Card variant="elevated" padding="none">
-        <CardHeader className="px-6 pt-5 pb-3">
-          <CardTitle className="capitalize">{tab}</CardTitle>
-        </CardHeader>
-        <CardBody className="p-0">
-          {isLoading ? (
-            <div className="space-y-3 p-6">
-              <Skeleton variant="rounded" height={40} />
-              <Skeleton variant="rounded" height={40} />
-              <Skeleton variant="rounded" height={40} />
-            </div>
-          ) : tab === "categories" ? (
-            (categoriesQuery.data?.data ?? []).length === 0 ? (
-              <div className="p-6">
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No categories yet"
-                  description="Create your first product category using the form above."
-                />
-              </div>
-            ) : (
-              <Table variant="hoverable">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Parent</TableHead>
-                    <TableHead align="right">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(categoriesQuery.data?.data ?? []).map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-mono text-xs text-eta-muted">
-                        {item.code}
-                      </TableCell>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell className="text-eta-muted">
-                        {item.parent ? item.parent.name : "—"}
-                      </TableCell>
-                      <TableCell align="right">
-                        <Badge variant="soft" color={item.is_active ? "success" : "neutral"}>
-                          {item.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )
-          ) : tab === "brands" ? (
-            (brandsQuery.data?.data ?? []).length === 0 ? (
-              <div className="p-6">
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No brands yet"
-                  description="Create your first product brand using the form above."
-                />
-              </div>
-            ) : (
-              <Table variant="hoverable">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead align="right">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(brandsQuery.data?.data ?? []).map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-mono text-xs text-eta-muted">
-                        {item.code}
-                      </TableCell>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell align="right">
-                        <Badge variant="soft" color={item.is_active ? "success" : "neutral"}>
-                          {item.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )
-          ) : tab === "units" ? (
-            (unitsQuery.data?.data ?? []).length === 0 ? (
-              <div className="p-6">
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No units yet"
-                  description="Create your first unit of measurement using the form above."
-                />
-              </div>
-            ) : (
-              <Table variant="hoverable">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead align="right">Precision</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(unitsQuery.data?.data ?? []).map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-mono text-xs text-eta-muted">
-                        {item.code}
-                      </TableCell>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell align="right">
-                        <Badge variant="soft" color="neutral">
-                          {item.allow_decimal ? "Decimal" : "Integer"}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )
-          ) : tab === "taxes" ? (
-            (taxesQuery.data?.data ?? []).length === 0 ? (
-              <div className="p-6">
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No taxes yet"
-                  description="Create your first tax rule using the form above."
-                />
-              </div>
-            ) : (
-              <Table variant="hoverable">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Name</TableHead>
-                    <TableHead align="right">Rate &amp; Type</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(taxesQuery.data?.data ?? []).map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="font-mono text-xs text-eta-muted">
-                        {item.code}
-                      </TableCell>
-                      <TableCell className="font-medium">{item.name}</TableCell>
-                      <TableCell align="right">
-                        <div className="inline-flex items-center gap-2">
-                          <Badge variant="solid" color="primary">
-                            {Number(item.rate)}%
-                          </Badge>
-                          <Badge variant="soft" color="neutral">
-                            {item.type}
-                          </Badge>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )
-          ) : (warehousesQuery.data?.data ?? []).length === 0 ? (
-            <div className="p-6">
-              <EmptyState
-                variant="bordered"
-                size="sm"
-                title="No warehouses yet"
-                description="Create your first warehouse using the form above."
-              />
-            </div>
-          ) : (
-            <Table variant="hoverable">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Store</TableHead>
-                  <TableHead align="right">Status</TableHead>
+      {isLoading ? (
+        <div className="space-y-2.5">
+          <Skeleton variant="rounded" height={40} />
+          <Skeleton variant="rounded" height={40} />
+          <Skeleton variant="rounded" height={40} />
+        </div>
+      ) : tab === "categories" ? (
+        (categoriesQuery.data?.data ?? []).length === 0 ? (
+          <EmptyState
+            variant="bordered"
+            size="sm"
+            title="No categories yet"
+            description="Create your first product category using the form above."
+          />
+        ) : (
+          <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead>Parent</TableHead>
+                <TableHead align="right">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(categoriesQuery.data?.data ?? []).map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-mono text-xs text-eta-muted">
+                    {item.code}
+                  </TableCell>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell className="text-eta-muted">
+                    {item.parent ? item.parent.name : "—"}
+                  </TableCell>
+                  <TableCell align="right">
+                    <Badge variant="soft" color={item.is_active ? "success" : "neutral"}>
+                      {item.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(warehousesQuery.data?.data ?? []).map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="font-mono text-xs text-eta-muted">
-                      {item.code}
-                    </TableCell>
-                    <TableCell className="font-medium">{item.name}</TableCell>
-                    <TableCell className="text-eta-muted">
-                      {item.store ? item.store.name : "—"}
-                    </TableCell>
-                    <TableCell align="right">
-                      <Badge variant="soft" color={item.is_default ? "success" : "neutral"}>
-                        {item.is_default ? "Default" : item.status}
+              ))}
+            </TableBody>
+          </Table>
+        )
+      ) : tab === "brands" ? (
+        (brandsQuery.data?.data ?? []).length === 0 ? (
+          <EmptyState
+            variant="bordered"
+            size="sm"
+            title="No brands yet"
+            description="Create your first product brand using the form above."
+          />
+        ) : (
+          <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead align="right">Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(brandsQuery.data?.data ?? []).map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-mono text-xs text-eta-muted">
+                    {item.code}
+                  </TableCell>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell align="right">
+                    <Badge variant="soft" color={item.is_active ? "success" : "neutral"}>
+                      {item.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )
+      ) : tab === "units" ? (
+        (unitsQuery.data?.data ?? []).length === 0 ? (
+          <EmptyState
+            variant="bordered"
+            size="sm"
+            title="No units yet"
+            description="Create your first unit of measurement using the form above."
+          />
+        ) : (
+          <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead align="right">Precision</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(unitsQuery.data?.data ?? []).map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-mono text-xs text-eta-muted">
+                    {item.code}
+                  </TableCell>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell align="right">
+                    <Badge variant="soft" color="neutral">
+                      {item.allow_decimal ? "Decimal" : "Integer"}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )
+      ) : tab === "taxes" ? (
+        (taxesQuery.data?.data ?? []).length === 0 ? (
+          <EmptyState
+            variant="bordered"
+            size="sm"
+            title="No taxes yet"
+            description="Create your first tax rule using the form above."
+          />
+        ) : (
+          <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Code</TableHead>
+                <TableHead>Name</TableHead>
+                <TableHead align="right">Rate &amp; Type</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {(taxesQuery.data?.data ?? []).map((item) => (
+                <TableRow key={item.id}>
+                  <TableCell className="font-mono text-xs text-eta-muted">
+                    {item.code}
+                  </TableCell>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell align="right">
+                    <div className="inline-flex items-center gap-2">
+                      <Badge variant="solid" color="primary">
+                        {Number(item.rate)}%
                       </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+                      <Badge variant="soft" color="neutral">
+                        {item.type}
+                      </Badge>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )
+      ) : (warehousesQuery.data?.data ?? []).length === 0 ? (
+        <EmptyState
+          variant="bordered"
+          size="sm"
+          title="No warehouses yet"
+          description="Create your first warehouse using the form above."
+        />
+      ) : (
+        <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Code</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Store</TableHead>
+              <TableHead align="right">Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(warehousesQuery.data?.data ?? []).map((item) => (
+              <TableRow key={item.id}>
+                <TableCell className="font-mono text-xs text-eta-muted">
+                  {item.code}
+                </TableCell>
+                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell className="text-eta-muted">
+                  {item.store ? item.store.name : "—"}
+                </TableCell>
+                <TableCell align="right">
+                  <Badge variant="soft" color={item.is_default ? "success" : "neutral"}>
+                    {item.is_default ? "Default" : item.status}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
     </div>
   );
 }

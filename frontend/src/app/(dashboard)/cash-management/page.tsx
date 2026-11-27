@@ -386,73 +386,69 @@ export default function CashManagementPage() {
         </Card>
       )}
 
-      <Card variant="elevated" padding="none">
-        <CardHeader className="px-6 pt-5 pb-3">
-          <CardTitle>Session History</CardTitle>
-        </CardHeader>
-        <CardBody>
-          {sessions.length === 0 ? (
-            <div className="p-6 pt-0">
-              <EmptyState
-                variant="bordered"
-                icon={<Wallet className="h-6 w-6" />}
-                title="No cash register sessions yet"
-                description="Opened and closed cashier shift sessions will appear here."
-              />
-            </div>
-          ) : (
-            <Table variant="hoverable" size="sm">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Register &amp; Cashier</TableHead>
-                  <TableHead>Shift Time</TableHead>
-                  <TableHead align="right">Expected</TableHead>
-                  <TableHead align="right">Actual</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sessions.map((session) => {
-                  const diff = session.cash_difference ? Number(session.cash_difference) : 0;
-                  return (
-                    <TableRow key={session.id}>
-                      <TableCell className="text-sm font-medium">
-                        {session.register?.name ?? `Register #${session.cash_register_id}`} •{" "}
-                        {session.user?.name ?? "Cashier"}
-                      </TableCell>
-                      <TableCell className="text-xs text-eta-muted">
-                        Opened {new Date(session.opened_at).toLocaleString()}
-                        {session.closed_at
-                          ? ` • Closed ${new Date(session.closed_at).toLocaleString()}`
-                          : ""}
-                      </TableCell>
-                      <TableCell align="right" className="font-mono text-xs">
-                        {formatCurrency(session.expected_cash)}
-                      </TableCell>
-                      <TableCell align="right" className="font-mono text-xs">
-                        {session.actual_cash !== null ? formatCurrency(session.actual_cash) : "—"}
-                      </TableCell>
-                      <TableCell>
-                        {session.status === "closed" ? (
-                          <Badge variant="soft" color={diff === 0 ? "success" : "warning"}>
-                            {diff === 0
-                              ? "Balanced"
-                              : `${diff > 0 ? "+" : ""}${formatCurrency(diff)}`}
-                          </Badge>
-                        ) : (
-                          <Badge variant="soft" color="success">
-                            OPEN
-                          </Badge>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+      <div className="space-y-3">
+        <Heading as="h2" size="md" weight="semibold">
+          Session History
+        </Heading>
+        {sessions.length === 0 ? (
+          <EmptyState
+            variant="bordered"
+            icon={<Wallet className="h-6 w-6" />}
+            title="No cash register sessions yet"
+            description="Opened and closed cashier shift sessions will appear here."
+          />
+        ) : (
+          <Table variant="hoverable" size="sm" containerClassName="rounded-xl border border-eta-border">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Register &amp; Cashier</TableHead>
+                <TableHead>Shift Time</TableHead>
+                <TableHead align="right">Expected</TableHead>
+                <TableHead align="right">Actual</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sessions.map((session) => {
+                const diff = session.cash_difference ? Number(session.cash_difference) : 0;
+                return (
+                  <TableRow key={session.id}>
+                    <TableCell className="text-sm font-medium">
+                      {session.register?.name ?? `Register #${session.cash_register_id}`} •{" "}
+                      {session.user?.name ?? "Cashier"}
+                    </TableCell>
+                    <TableCell className="text-xs text-eta-muted">
+                      Opened {new Date(session.opened_at).toLocaleString()}
+                      {session.closed_at
+                        ? ` • Closed ${new Date(session.closed_at).toLocaleString()}`
+                        : ""}
+                    </TableCell>
+                    <TableCell align="right" className="font-mono text-xs">
+                      {formatCurrency(session.expected_cash)}
+                    </TableCell>
+                    <TableCell align="right" className="font-mono text-xs">
+                      {session.actual_cash !== null ? formatCurrency(session.actual_cash) : "—"}
+                    </TableCell>
+                    <TableCell>
+                      {session.status === "closed" ? (
+                        <Badge variant="soft" color={diff === 0 ? "success" : "warning"}>
+                          {diff === 0
+                            ? "Balanced"
+                            : `${diff > 0 ? "+" : ""}${formatCurrency(diff)}`}
+                        </Badge>
+                      ) : (
+                        <Badge variant="soft" color="success">
+                          OPEN
+                        </Badge>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        )}
+      </div>
     </div>
   );
 }

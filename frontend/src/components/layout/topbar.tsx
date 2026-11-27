@@ -4,7 +4,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, LogOut, Settings, Store as StoreIcon } from "lucide-react";
+import { Bell, LogOut, Store as StoreIcon } from "lucide-react";
 import {
   Avatar,
   Badge,
@@ -93,10 +93,14 @@ export function Topbar() {
             <SelectTrigger
               size="sm"
               aria-label="Active store"
-              className="mr-0.5 h-8 max-w-[220px] gap-2 rounded-lg border border-eta-border/60 bg-eta-surface/70 px-2.5 text-xs text-eta-body shadow-none hover:bg-eta-subtle hover:text-eta-heading"
+              className="mr-0.5 h-8 w-auto max-w-60 rounded-lg border border-eta-border/60 bg-eta-surface/70 px-2.5 text-xs text-eta-body shadow-none hover:bg-eta-subtle hover:text-eta-heading"
             >
-              <StoreIcon className="h-3.5 w-3.5 shrink-0 text-eta-muted" />
-              <SelectValue placeholder="Select store" />
+              <span className="flex min-w-0 items-center gap-1.5">
+                <StoreIcon className="h-3.5 w-3.5 shrink-0 text-eta-muted" />
+                <span className="min-w-0 truncate">
+                  <SelectValue placeholder="Select store" />
+                </span>
+              </span>
             </SelectTrigger>
             <SelectContent align="end">
               {user.stores.map((store) => (
@@ -179,18 +183,11 @@ export function Topbar() {
                 <Badge variant="soft" color="neutral" size="sm">
                   {user.roles[0] ?? "Staff"}
                 </Badge>
-              </div>
+              </div>            
               <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link href="/settings">
-                  <Settings className="h-4 w-4" />
-                  Settings
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem color="danger" onClick={handleLogout}>
-                <LogOut className="h-4 w-4" />
-                Log out
+              <DropdownMenuItem color="danger" className="justify-center gap-2" onClick={handleLogout}>
+                <LogOut className="h-4 w-4 shrink-0" />
+                <span>Log out</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

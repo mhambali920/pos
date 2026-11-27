@@ -14,10 +14,6 @@ import {
   AlertDialogTitle,
   Badge,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogBody,
   DialogContent,
@@ -158,84 +154,75 @@ export default function SuppliersPage() {
         </div>
       </div>
 
-      <Card variant="elevated" padding="none">
-        <CardHeader className="px-6 pt-5 pb-3">
-          <CardTitle>Supplier Directory</CardTitle>
-        </CardHeader>
-        <CardBody className="p-0">
-          {suppliersQuery.isLoading ? (
-            <div className="space-y-3 p-6">
-              <Skeleton variant="rounded" height={48} />
-              <Skeleton variant="rounded" height={48} />
-              <Skeleton variant="rounded" height={48} />
-            </div>
-          ) : suppliers.length === 0 ? (
-            <div className="p-6">
-              <EmptyState
-                variant="bordered"
-                icon={<Building2 className="h-6 w-6" />}
-                title="No suppliers found"
-                description="Add your first vendor to manage purchasing and balances."
-                action={
-                  <Button variant="solid" color="primary" size="sm" onClick={openCreate}>
-                    Add Supplier
-                  </Button>
-                }
-              />
-            </div>
-          ) : (
-            <Table variant="hoverable">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Company</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Terms</TableHead>
-                  <TableHead>Balance</TableHead>
-                  <TableHead align="right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {suppliers.map((s) => (
-                  <TableRow key={s.id}>
-                    <TableCell className="font-mono text-xs">{s.code}</TableCell>
-                    <TableCell className="font-medium">{s.company_name}</TableCell>
-                    <TableCell className="text-eta-muted">
-                      {s.contact_person ?? "—"} {s.phone ? `(${s.phone})` : ""}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="soft" color="neutral">
-                        NET {s.payment_terms_days}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono font-medium">
-                      {formatCurrency(s.balance)}
-                    </TableCell>
-                    <TableCell align="right">
-                      <div className="inline-flex items-center gap-1">
-                        <IconButton
-                          icon={<Pencil className="h-4 w-4" />}
-                          variant="ghost"
-                          size="sm"
-                          aria-label="Edit supplier"
-                          onClick={() => openEdit(s)}
-                        />
-                        <IconButton
-                          icon={<Trash2 className="h-4 w-4 text-eta-danger" />}
-                          variant="ghost"
-                          size="sm"
-                          aria-label="Delete supplier"
-                          onClick={() => setDeleteTarget(s)}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+      {suppliersQuery.isLoading ? (
+        <div className="space-y-2.5">
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
+        </div>
+      ) : suppliers.length === 0 ? (
+        <EmptyState
+          variant="bordered"
+          icon={<Building2 className="h-6 w-6" />}
+          title="No suppliers found"
+          description="Add your first vendor to manage purchasing and balances."
+          action={
+            <Button variant="solid" color="primary" size="sm" onClick={openCreate}>
+              Add Supplier
+            </Button>
+          }
+        />
+      ) : (
+        <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Code</TableHead>
+              <TableHead>Company</TableHead>
+              <TableHead>Contact</TableHead>
+              <TableHead>Terms</TableHead>
+              <TableHead>Balance</TableHead>
+              <TableHead align="right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {suppliers.map((s) => (
+              <TableRow key={s.id}>
+                <TableCell className="font-mono text-xs">{s.code}</TableCell>
+                <TableCell className="font-medium">{s.company_name}</TableCell>
+                <TableCell className="text-eta-muted">
+                  {s.contact_person ?? "—"} {s.phone ? `(${s.phone})` : ""}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="soft" color="neutral">
+                    NET {s.payment_terms_days}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-mono font-medium">
+                  {formatCurrency(s.balance)}
+                </TableCell>
+                <TableCell align="right">
+                  <div className="inline-flex items-center gap-1">
+                    <IconButton
+                      icon={<Pencil className="h-4 w-4" />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Edit supplier"
+                      onClick={() => openEdit(s)}
+                    />
+                    <IconButton
+                      icon={<Trash2 className="h-4 w-4 text-eta-danger" />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Delete supplier"
+                      onClick={() => setDeleteTarget(s)}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

@@ -20,10 +20,8 @@ import {
   Wallet,
 } from "lucide-react";
 import {
-  Avatar,
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -131,26 +129,6 @@ export function SidebarNav() {
           </SidebarGroup>
         ))}
       </SidebarContent>
-
-      <SidebarFooter className="border-none px-3 pt-1 pb-3">
-        {!isCollapsed ? (
-          <div className="flex w-full items-center gap-2.5 rounded-xl bg-eta-base/70 px-2.5 py-2 ring-1 ring-eta-border/60">
-            <Avatar name={user?.name ?? "Guest"} size="sm" />
-            <div className="min-w-0 flex-1 text-xs leading-tight">
-              <div className="truncate font-semibold text-eta-heading">
-                {user?.name ?? "Guest"}
-              </div>
-              <div className="truncate text-eta-muted">
-                {user?.roles[0] ?? "Not signed in"}
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="flex w-full justify-center">
-            <Avatar name={user?.name ?? "Guest"} size="sm" />
-          </div>
-        )}
-      </SidebarFooter>
     </Sidebar>
   );
 }

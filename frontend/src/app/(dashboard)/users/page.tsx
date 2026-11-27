@@ -6,10 +6,6 @@ import { KeyRound, Pencil, Plus, Power, Search } from "lucide-react";
 import {
   Badge,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
   Checkbox,
   Dialog,
   DialogBody,
@@ -188,86 +184,83 @@ export default function UsersPage() {
         </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Organization Users</CardTitle>
-        </CardHeader>
-        <CardBody>
-          {usersQuery.isLoading ? (
-            <Skeleton variant="rounded" height={96} />
-          ) : users.length === 0 ? (
-            <EmptyState
-              variant="bordered"
-              size="sm"
-              title="No users found."
-              description="Try adjusting your search or add a new staff account."
-            />
-          ) : (
-            <Table variant="hoverable">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Roles</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead align="right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.map((u) => (
-                  <TableRow key={u.id}>
-                    <TableCell className="font-medium">{u.name}</TableCell>
-                    <TableCell className="text-eta-muted">{u.email}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-wrap gap-1">
-                        {u.roles.map((r) => (
-                          <Badge key={r} variant="soft" color="primary" size="sm">
-                            {r}
-                          </Badge>
-                        ))}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="soft"
-                        color={u.is_active ? "success" : "neutral"}
-                        size="sm"
-                      >
-                        {u.is_active ? "Active" : "Inactive"}
+      {usersQuery.isLoading ? (
+        <div className="space-y-2.5">
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
+        </div>
+      ) : users.length === 0 ? (
+        <EmptyState
+          variant="bordered"
+          size="sm"
+          title="No users found."
+          description="Try adjusting your search or add a new staff account."
+        />
+      ) : (
+        <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Roles</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead align="right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {users.map((u) => (
+              <TableRow key={u.id}>
+                <TableCell className="font-medium">{u.name}</TableCell>
+                <TableCell className="text-eta-muted">{u.email}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {u.roles.map((r) => (
+                      <Badge key={r} variant="soft" color="primary" size="sm">
+                        {r}
                       </Badge>
-                    </TableCell>
-                    <TableCell align="right">
-                      <div className="inline-flex items-center gap-1">
-                        <IconButton
-                          icon={<Pencil className="h-4 w-4" />}
-                          size="sm"
-                          variant="ghost"
-                          aria-label="Edit user"
-                          onClick={() => openEdit(u)}
-                        />
-                        <IconButton
-                          icon={<KeyRound className="h-4 w-4" />}
-                          size="sm"
-                          variant="ghost"
-                          aria-label="Reset password"
-                          onClick={() => setResetUser(u)}
-                        />
-                        <IconButton
-                          icon={<Power className="h-4 w-4" />}
-                          size="sm"
-                          variant="ghost"
-                          aria-label="Toggle active status"
-                          onClick={() => toggleActiveMutation.mutate(u)}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+                    ))}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="soft"
+                    color={u.is_active ? "success" : "neutral"}
+                    size="sm"
+                  >
+                    {u.is_active ? "Active" : "Inactive"}
+                  </Badge>
+                </TableCell>
+                <TableCell align="right">
+                  <div className="inline-flex items-center gap-1">
+                    <IconButton
+                      icon={<Pencil className="h-4 w-4" />}
+                      size="sm"
+                      variant="ghost"
+                      aria-label="Edit user"
+                      onClick={() => openEdit(u)}
+                    />
+                    <IconButton
+                      icon={<KeyRound className="h-4 w-4" />}
+                      size="sm"
+                      variant="ghost"
+                      aria-label="Reset password"
+                      onClick={() => setResetUser(u)}
+                    />
+                    <IconButton
+                      icon={<Power className="h-4 w-4" />}
+                      size="sm"
+                      variant="ghost"
+                      aria-label="Toggle active status"
+                      onClick={() => toggleActiveMutation.mutate(u)}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent size="lg">

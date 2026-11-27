@@ -16,10 +16,6 @@ import {
   AlertDialogTitle,
   Badge,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
   EmptyState,
   Heading,
   IconButton,
@@ -112,125 +108,114 @@ export default function ProductsPage() {
         </div>
       </div>
 
-      <Card variant="elevated" padding="none">
-        <CardHeader className="px-6 pt-5 pb-3">
-          <CardTitle>Product Catalog</CardTitle>
-        </CardHeader>
-        <CardBody className="p-0">
-          {productsQuery.isLoading ? (
-            <div className="space-y-3 p-6">
-              <Skeleton variant="rounded" height={48} />
-              <Skeleton variant="rounded" height={48} />
-              <Skeleton variant="rounded" height={48} />
-            </div>
-          ) : productsQuery.isError ? (
-            <div className="p-6">
-              <Alert
-                status="error"
-                variant="soft"
-                title="Failed to load products"
-                description={
-                  productsQuery.error instanceof Error
-                    ? productsQuery.error.message
-                    : "An unexpected error occurred."
-                }
-              />
-            </div>
-          ) : products.length === 0 ? (
-            <div className="p-6">
-              <EmptyState
-                variant="bordered"
-                icon={<Package className="h-6 w-6" />}
-                title="No products found"
-                description="Try adjusting your search or filter, or add a new product to the catalog."
-                action={
-                  <Button asChild variant="solid" color="primary" size="sm">
-                    <Link href="/products/new">Add Product</Link>
-                  </Button>
-                }
-              />
-            </div>
-          ) : (
-            <Table variant="hoverable">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Product</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Primary SKU</TableHead>
-                  <TableHead>Selling Price</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead align="right">Actions</TableHead>
+      {productsQuery.isLoading ? (
+        <div className="space-y-2.5">
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
+        </div>
+      ) : productsQuery.isError ? (
+        <Alert
+          status="error"
+          variant="soft"
+          title="Failed to load products"
+          description={
+            productsQuery.error instanceof Error
+              ? productsQuery.error.message
+              : "An unexpected error occurred."
+          }
+        />
+      ) : products.length === 0 ? (
+        <EmptyState
+          variant="bordered"
+          icon={<Package className="h-6 w-6" />}
+          title="No products found"
+          description="Try adjusting your search or filter, or add a new product to the catalog."
+          action={
+            <Button asChild variant="solid" color="primary" size="sm">
+              <Link href="/products/new">Add Product</Link>
+            </Button>
+          }
+        />
+      ) : (
+        <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Product</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Primary SKU</TableHead>
+              <TableHead>Selling Price</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead align="right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {products.map((product) => {
+              const primary = product.variants[0];
+              return (
+                <TableRow key={product.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={product.image_path || "/images/products/placeholder.svg"}
+                        alt={product.name}
+                        onError={(e) => {
+                          if (!e.currentTarget.src.endsWith("/images/products/placeholder.svg")) {
+                            e.currentTarget.src = "/images/products/placeholder.svg";
+                          }
+                        }}
+                        className="h-10 w-12 shrink-0 rounded-md border border-eta-border object-cover"
+                      />
+                      <div>
+                        <div className="font-medium text-eta-heading">{product.name}</div>
+                        <div className="text-xs text-eta-muted">
+                          {product.category?.name ?? "Uncategorized"}
+                          {product.variants.length > 1
+                            ? ` • ${product.variants.length} variants`
+                            : ""}
+                        </div>
+                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="soft" color="neutral">
+                      {product.product_type}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">{primary?.sku ?? "—"}</TableCell>
+                  <TableCell className="font-mono font-medium">
+                    {primary ? formatCurrency(primary.selling_price) : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="soft" color={product.is_active ? "success" : "neutral"}>
+                      {product.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell align="right">
+                    <div className="inline-flex items-center gap-1">
+                      <Link href={`/products/${product.id}/edit`}>
+                        <IconButton
+                          icon={<Pencil className="h-4 w-4" />}
+                          variant="ghost"
+                          size="sm"
+                          aria-label="Edit product"
+                        />
+                      </Link>
+                      <IconButton
+                        icon={<Trash2 className="h-4 w-4 text-eta-danger" />}
+                        variant="ghost"
+                        size="sm"
+                        aria-label="Delete product"
+                        onClick={() => setDeleteTarget(product)}
+                      />
+                    </div>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-              <TableBody>
-                {products.map((product) => {
-                  const primary = product.variants[0];
-                  return (
-                    <TableRow key={product.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <img
-                            src={product.image_path || "/images/products/placeholder.svg"}
-                            alt={product.name}
-                            onError={(e) => {
-                              if (!e.currentTarget.src.endsWith("/images/products/placeholder.svg")) {
-                                e.currentTarget.src = "/images/products/placeholder.svg";
-                              }
-                            }}
-                            className="h-10 w-12 shrink-0 rounded-md border border-eta-border object-cover"
-                          />
-                          <div>
-                            <div className="font-medium text-eta-heading">{product.name}</div>
-                            <div className="text-xs text-eta-muted">
-                              {product.category?.name ?? "Uncategorized"}
-                              {product.variants.length > 1
-                                ? ` • ${product.variants.length} variants`
-                                : ""}
-                            </div>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="soft" color="neutral">
-                          {product.product_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">{primary?.sku ?? "—"}</TableCell>
-                      <TableCell className="font-mono font-medium">
-                        {primary ? formatCurrency(primary.selling_price) : "—"}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="soft" color={product.is_active ? "success" : "neutral"}>
-                          {product.is_active ? "Active" : "Inactive"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell align="right">
-                        <div className="inline-flex items-center gap-1">
-                          <Link href={`/products/${product.id}/edit`}>
-                            <IconButton
-                              icon={<Pencil className="h-4 w-4" />}
-                              variant="ghost"
-                              size="sm"
-                              aria-label="Edit product"
-                            />
-                          </Link>
-                          <IconButton
-                            icon={<Trash2 className="h-4 w-4 text-eta-danger" />}
-                            variant="ghost"
-                            size="sm"
-                            aria-label="Delete product"
-                            onClick={() => setDeleteTarget(product)}
-                          />
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+              );
+            })}
+          </TableBody>
+        </Table>
+      )}
 
       <AlertDialog open={Boolean(deleteTarget)} onOpenChange={(o) => !o && setDeleteTarget(null)}>
         <AlertDialogContent intent="danger">

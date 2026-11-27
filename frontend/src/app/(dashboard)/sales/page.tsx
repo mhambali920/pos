@@ -6,10 +6,6 @@ import { Printer, Receipt, RotateCcw } from "lucide-react";
 import {
   Badge,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogBody,
   DialogContent,
@@ -222,169 +218,149 @@ export default function SalesHistoryPage() {
       </div>
 
       {activeTab === "sales" ? (
-        <Card variant="elevated" padding="none">
-          <CardHeader className="px-6 pt-5 pb-3">
-            <CardTitle>Transactions</CardTitle>
-          </CardHeader>
-          <CardBody>
-            {salesQuery.isLoading ? (
-              <div className="space-y-2 p-6 pt-0">
-                {[1, 2, 3].map((n) => (
-                  <Skeleton key={n} variant="rounded" height={48} />
-                ))}
-              </div>
-            ) : sales.length === 0 ? (
-              <div className="p-6 pt-0">
-                <EmptyState
-                  variant="bordered"
-                  icon={<Receipt className="h-6 w-6" />}
-                  title="No sales transactions yet"
-                  description="Completed or held POS transactions will appear here."
-                />
-              </div>
-            ) : (
-              <Table variant="hoverable" size="sm">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Transaction #</TableHead>
-                    <TableHead>Cashier</TableHead>
-                    <TableHead>Customer</TableHead>
-                    <TableHead align="right">Total</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead align="right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sales.map((sale) => (
-                    <TableRow key={sale.id}>
-                      <TableCell className="font-mono text-xs font-semibold">
-                        {sale.transaction_number}
-                      </TableCell>
-                      <TableCell className="text-xs text-eta-muted">
-                        {sale.cashier?.name ?? "Cashier"}
-                      </TableCell>
-                      <TableCell className="text-xs text-eta-muted">
-                        {sale.customer?.name ?? "Walk-in"}
-                      </TableCell>
-                      <TableCell align="right" className="font-mono text-xs font-semibold">
-                        {formatCurrency(sale.grand_total)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
+        salesQuery.isLoading ? (
+          <div className="space-y-2.5">
+            {[1, 2, 3].map((n) => (
+              <Skeleton key={n} variant="rounded" height={48} />
+            ))}
+          </div>
+        ) : sales.length === 0 ? (
+          <EmptyState
+            variant="bordered"
+            icon={<Receipt className="h-6 w-6" />}
+            title="No sales transactions yet"
+            description="Completed or held POS transactions will appear here."
+          />
+        ) : (
+          <Table variant="hoverable" size="sm" containerClassName="rounded-xl border border-eta-border">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Transaction #</TableHead>
+                <TableHead>Cashier</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead align="right">Total</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead align="right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {sales.map((sale) => (
+                <TableRow key={sale.id}>
+                  <TableCell className="font-mono text-xs font-semibold">
+                    {sale.transaction_number}
+                  </TableCell>
+                  <TableCell className="text-xs text-eta-muted">
+                    {sale.cashier?.name ?? "Cashier"}
+                  </TableCell>
+                  <TableCell className="text-xs text-eta-muted">
+                    {sale.customer?.name ?? "Walk-in"}
+                  </TableCell>
+                  <TableCell align="right" className="font-mono text-xs font-semibold">
+                    {formatCurrency(sale.grand_total)}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="soft"
+                      color={
+                        sale.status === "paid"
+                          ? "success"
+                          : sale.status === "cancelled"
+                            ? "danger"
+                            : "warning"
+                      }
+                    >
+                      {sale.status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell align="right">
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<Printer className="h-3.5 w-3.5" />}
+                        onClick={() => openReceipt(sale.id)}
+                      >
+                        Receipt
+                      </Button>
+                      {(sale.status === "paid" || sale.status === "partially_refunded") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
+                          onClick={() => openRefundModal(sale)}
+                        >
+                          Refund
+                        </Button>
+                      )}
+                      {sale.status !== "cancelled" && sale.status !== "refunded" && (
+                        <Button
+                          size="sm"
                           variant="soft"
-                          color={
-                            sale.status === "paid"
-                              ? "success"
-                              : sale.status === "cancelled"
-                                ? "danger"
-                                : "warning"
+                          color="danger"
+                          isLoading={voidMutation.isPending}
+                          onClick={() =>
+                            voidMutation.mutate({
+                              id: sale.id,
+                              reason: "Authorized void from backoffice",
+                            })
                           }
                         >
-                          {sale.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell align="right">
-                        <div className="flex flex-wrap items-center justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            leftIcon={<Printer className="h-3.5 w-3.5" />}
-                            onClick={() => openReceipt(sale.id)}
-                          >
-                            Receipt
-                          </Button>
-                          {(sale.status === "paid" || sale.status === "partially_refunded") && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              leftIcon={<RotateCcw className="h-3.5 w-3.5" />}
-                              onClick={() => openRefundModal(sale)}
-                            >
-                              Refund
-                            </Button>
-                          )}
-                          {sale.status !== "cancelled" && sale.status !== "refunded" && (
-                            <Button
-                              size="sm"
-                              variant="soft"
-                              color="danger"
-                              isLoading={voidMutation.isPending}
-                              onClick={() =>
-                                voidMutation.mutate({
-                                  id: sale.id,
-                                  reason: "Authorized void from backoffice",
-                                })
-                              }
-                            >
-                              Void
-                            </Button>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardBody>
-        </Card>
+                          Void
+                        </Button>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )
+      ) : returnsQuery.isLoading ? (
+        <div className="space-y-2.5">
+          {[1, 2, 3].map((n) => (
+            <Skeleton key={n} variant="rounded" height={48} />
+          ))}
+        </div>
+      ) : returns.length === 0 ? (
+        <EmptyState
+          variant="bordered"
+          icon={<RotateCcw className="h-6 w-6" />}
+          title="No sale returns recorded yet"
+          description="Processed refunds and returned items will appear here."
+        />
       ) : (
-        <Card variant="elevated" padding="none">
-          <CardHeader className="px-6 pt-5 pb-3">
-            <CardTitle>Sale Returns &amp; Refunds</CardTitle>
-          </CardHeader>
-          <CardBody>
-            {returnsQuery.isLoading ? (
-              <div className="space-y-2 p-6 pt-0">
-                {[1, 2, 3].map((n) => (
-                  <Skeleton key={n} variant="rounded" height={48} />
-                ))}
-              </div>
-            ) : returns.length === 0 ? (
-              <div className="p-6 pt-0">
-                <EmptyState
-                  variant="bordered"
-                  icon={<RotateCcw className="h-6 w-6" />}
-                  title="No sale returns recorded yet"
-                  description="Processed refunds and returned items will appear here."
-                />
-              </div>
-            ) : (
-              <Table variant="hoverable" size="sm">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Return #</TableHead>
-                    <TableHead>Reference Sale</TableHead>
-                    <TableHead>Reason</TableHead>
-                    <TableHead align="right">Refund Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {returns.map((ret) => (
-                    <TableRow key={ret.id}>
-                      <TableCell className="font-mono text-xs font-semibold">
-                        {ret.return_number}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs text-eta-muted">
-                        {ret.sale?.transaction_number ?? `#${ret.id}`}
-                      </TableCell>
-                      <TableCell className="text-xs text-eta-muted">{ret.reason}</TableCell>
-                      <TableCell align="right" className="font-mono text-xs font-semibold">
-                        {formatCurrency(ret.refund_amount)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="soft" color="success">
-                          {ret.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardBody>
-        </Card>
+        <Table variant="hoverable" size="sm" containerClassName="rounded-xl border border-eta-border">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Return #</TableHead>
+              <TableHead>Reference Sale</TableHead>
+              <TableHead>Reason</TableHead>
+              <TableHead align="right">Refund Amount</TableHead>
+              <TableHead>Status</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {returns.map((ret) => (
+              <TableRow key={ret.id}>
+                <TableCell className="font-mono text-xs font-semibold">
+                  {ret.return_number}
+                </TableCell>
+                <TableCell className="font-mono text-xs text-eta-muted">
+                  {ret.sale?.transaction_number ?? `#${ret.id}`}
+                </TableCell>
+                <TableCell className="text-xs text-eta-muted">{ret.reason}</TableCell>
+                <TableCell align="right" className="font-mono text-xs font-semibold">
+                  {formatCurrency(ret.refund_amount)}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="soft" color="success">
+                    {ret.status}
+                  </Badge>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
       )}
 
       <Dialog open={Boolean(refundSale)} onOpenChange={(o) => !o && setRefundSale(null)}>

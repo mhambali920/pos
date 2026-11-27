@@ -14,10 +14,6 @@ import {
   AlertDialogTitle,
   Badge,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogBody,
   DialogContent,
@@ -206,92 +202,83 @@ export default function CustomersPage() {
         </div>
       </div>
 
-      <Card variant="elevated" padding="none">
-        <CardHeader className="px-6 pt-5 pb-3">
-          <CardTitle>Customer Directory</CardTitle>
-        </CardHeader>
-        <CardBody className="p-0">
-          {customersQuery.isLoading ? (
-            <div className="space-y-3 p-6">
-              <Skeleton variant="rounded" height={48} />
-              <Skeleton variant="rounded" height={48} />
-              <Skeleton variant="rounded" height={48} />
-            </div>
-          ) : customers.length === 0 ? (
-            <div className="p-6">
-              <EmptyState
-                variant="bordered"
-                icon={<Users className="h-6 w-6" />}
-                title="No customers found"
-                description="Try adjusting your search or filter, or add a new customer."
-                action={
-                  <Button variant="solid" color="primary" size="sm" onClick={openCreate}>
-                    Add Customer
-                  </Button>
-                }
-              />
-            </div>
-          ) : (
-            <Table variant="hoverable">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Code</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead>Loyalty</TableHead>
-                  <TableHead>Credit Limit</TableHead>
-                  <TableHead align="right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {customers.map((c) => (
-                  <TableRow key={c.id}>
-                    <TableCell className="font-mono text-xs">{c.code}</TableCell>
-                    <TableCell>
-                      <div className="font-medium text-eta-heading">{c.name}</div>
-                      <div className="text-xs text-eta-muted">{c.phone ?? c.email ?? "—"}</div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="solid" color="primary">
-                        {c.customer_type}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="font-mono">{c.loyalty_points} pts</TableCell>
-                    <TableCell className="font-mono font-medium">
-                      {formatCurrency(c.credit_limit)}
-                    </TableCell>
-                    <TableCell align="right">
-                      <div className="inline-flex items-center gap-1">
-                        <IconButton
-                          icon={<Award className="h-4 w-4 text-eta-warning" />}
-                          variant="ghost"
-                          size="sm"
-                          aria-label="Adjust loyalty points"
-                          onClick={() => setLoyaltyCustomer(c)}
-                        />
-                        <IconButton
-                          icon={<Pencil className="h-4 w-4" />}
-                          variant="ghost"
-                          size="sm"
-                          aria-label="Edit customer"
-                          onClick={() => openEdit(c)}
-                        />
-                        <IconButton
-                          icon={<Trash2 className="h-4 w-4 text-eta-danger" />}
-                          variant="ghost"
-                          size="sm"
-                          aria-label="Delete customer"
-                          onClick={() => setDeleteTarget(c)}
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+      {customersQuery.isLoading ? (
+        <div className="space-y-2.5">
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
+          <Skeleton variant="rounded" height={48} />
+        </div>
+      ) : customers.length === 0 ? (
+        <EmptyState
+          variant="bordered"
+          icon={<Users className="h-6 w-6" />}
+          title="No customers found"
+          description="Try adjusting your search or filter, or add a new customer."
+          action={
+            <Button variant="solid" color="primary" size="sm" onClick={openCreate}>
+              Add Customer
+            </Button>
+          }
+        />
+      ) : (
+        <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Code</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Type</TableHead>
+              <TableHead>Loyalty</TableHead>
+              <TableHead>Credit Limit</TableHead>
+              <TableHead align="right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {customers.map((c) => (
+              <TableRow key={c.id}>
+                <TableCell className="font-mono text-xs">{c.code}</TableCell>
+                <TableCell>
+                  <div className="font-medium text-eta-heading">{c.name}</div>
+                  <div className="text-xs text-eta-muted">{c.phone ?? c.email ?? "—"}</div>
+                </TableCell>
+                <TableCell>
+                  <Badge variant="solid" color="primary">
+                    {c.customer_type}
+                  </Badge>
+                </TableCell>
+                <TableCell className="font-mono">{c.loyalty_points} pts</TableCell>
+                <TableCell className="font-mono font-medium">
+                  {formatCurrency(c.credit_limit)}
+                </TableCell>
+                <TableCell align="right">
+                  <div className="inline-flex items-center gap-1">
+                    <IconButton
+                      icon={<Award className="h-4 w-4 text-eta-warning" />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Adjust loyalty points"
+                      onClick={() => setLoyaltyCustomer(c)}
+                    />
+                    <IconButton
+                      icon={<Pencil className="h-4 w-4" />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Edit customer"
+                      onClick={() => openEdit(c)}
+                    />
+                    <IconButton
+                      icon={<Trash2 className="h-4 w-4 text-eta-danger" />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label="Delete customer"
+                      onClick={() => setDeleteTarget(c)}
+                    />
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>

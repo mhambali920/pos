@@ -273,119 +273,110 @@ export default function ExpensesPage() {
         </Card>
       )}
 
-      <Card variant="elevated" padding="none">
-        <CardHeader className="px-6 pt-5 pb-3">
-          <CardTitle>Expenses</CardTitle>
-        </CardHeader>
-        <CardBody>
-          {expensesQuery.isLoading ? (
-            <div className="space-y-2 p-6 pt-0">
-              {[1, 2, 3].map((n) => (
-                <Skeleton key={n} variant="rounded" height={48} />
-              ))}
-            </div>
-          ) : expenses.length === 0 ? (
-            <div className="p-6 pt-0">
-              <EmptyState
-                variant="bordered"
-                icon={<Receipt className="h-6 w-6" />}
-                title="No expenses recorded yet"
-                description="Submitted operational expenses will appear here for approval."
-              />
-            </div>
-          ) : (
-            <Table variant="hoverable" size="sm">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Expense #</TableHead>
-                  <TableHead>Category &amp; Description</TableHead>
-                  <TableHead>Date &amp; Staff</TableHead>
-                  <TableHead align="right">Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead align="right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expenses.map((exp) => (
-                  <TableRow key={exp.id}>
-                    <TableCell className="font-mono text-xs font-semibold">
-                      <div className="flex items-center gap-1.5">
-                        <span>{exp.expense_number}</span>
-                        {exp.attachment_path && (
-                          <span
-                            className="inline-flex items-center gap-1 text-eta-muted"
-                            title="Has receipt attachment"
-                          >
-                            <FileText className="h-3 w-3" />
-                          </span>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1">
-                        <div className="text-sm text-eta-heading">{exp.description}</div>
-                        <div>
-                          <Badge variant="soft" color="neutral" size="sm">
-                            {exp.category?.name ?? "General"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs text-eta-muted">
-                      {exp.expense_date} • By {exp.creator?.name ?? "Staff"}
-                    </TableCell>
-                    <TableCell align="right" className="font-mono text-xs font-semibold">
-                      {formatCurrency(exp.amount)}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
+      {expensesQuery.isLoading ? (
+        <div className="space-y-2.5">
+          {[1, 2, 3].map((n) => (
+            <Skeleton key={n} variant="rounded" height={48} />
+          ))}
+        </div>
+      ) : expenses.length === 0 ? (
+        <EmptyState
+          variant="bordered"
+          icon={<Receipt className="h-6 w-6" />}
+          title="No expenses recorded yet"
+          description="Submitted operational expenses will appear here for approval."
+        />
+      ) : (
+        <Table variant="hoverable" size="sm" containerClassName="rounded-xl border border-eta-border">
+          <TableHeader>
+            <TableRow>
+              <TableHead>Expense #</TableHead>
+              <TableHead>Category &amp; Description</TableHead>
+              <TableHead>Date &amp; Staff</TableHead>
+              <TableHead align="right">Amount</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead align="right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {expenses.map((exp) => (
+              <TableRow key={exp.id}>
+                <TableCell className="font-mono text-xs font-semibold">
+                  <div className="flex items-center gap-1.5">
+                    <span>{exp.expense_number}</span>
+                    {exp.attachment_path && (
+                      <span
+                        className="inline-flex items-center gap-1 text-eta-muted"
+                        title="Has receipt attachment"
+                      >
+                        <FileText className="h-3 w-3" />
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex flex-col gap-1">
+                    <div className="text-sm text-eta-heading">{exp.description}</div>
+                    <div>
+                      <Badge variant="soft" color="neutral" size="sm">
+                        {exp.category?.name ?? "General"}
+                      </Badge>
+                    </div>
+                  </div>
+                </TableCell>
+                <TableCell className="text-xs text-eta-muted">
+                  {exp.expense_date} • By {exp.creator?.name ?? "Staff"}
+                </TableCell>
+                <TableCell align="right" className="font-mono text-xs font-semibold">
+                  {formatCurrency(exp.amount)}
+                </TableCell>
+                <TableCell>
+                  <Badge
+                    variant="soft"
+                    color={
+                      exp.status === "approved"
+                        ? "success"
+                        : exp.status === "rejected"
+                          ? "warning"
+                          : "neutral"
+                    }
+                  >
+                    {exp.status}
+                  </Badge>
+                </TableCell>
+                <TableCell align="right">
+                  {exp.status === "pending_approval" && (
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        leftIcon={<CheckCircle2 className="h-3.5 w-3.5 text-eta-success" />}
+                        onClick={() => approveMutation.mutate(exp.id)}
+                      >
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
                         variant="soft"
-                        color={
-                          exp.status === "approved"
-                            ? "success"
-                            : exp.status === "rejected"
-                              ? "warning"
-                              : "neutral"
+                        color="danger"
+                        leftIcon={<XCircle className="h-3.5 w-3.5" />}
+                        onClick={() =>
+                          rejectMutation.mutate({
+                            id: exp.id,
+                            reason: "Rejected during backoffice review",
+                          })
                         }
                       >
-                        {exp.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell align="right">
-                      {exp.status === "pending_approval" && (
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            leftIcon={<CheckCircle2 className="h-3.5 w-3.5 text-eta-success" />}
-                            onClick={() => approveMutation.mutate(exp.id)}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="soft"
-                            color="danger"
-                            leftIcon={<XCircle className="h-3.5 w-3.5" />}
-                            onClick={() =>
-                              rejectMutation.mutate({
-                                id: exp.id,
-                                reason: "Rejected during backoffice review",
-                              })
-                            }
-                          >
-                            Reject
-                          </Button>
-                        </div>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardBody>
-      </Card>
+                        Reject
+                      </Button>
+                    </div>
+                  )}
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
 
       <Card variant="elevated">
         <CardHeader>

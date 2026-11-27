@@ -6,10 +6,6 @@ import { Plus } from "lucide-react";
 import {
   Badge,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
   Dialog,
   DialogBody,
   DialogContent,
@@ -24,6 +20,12 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
   Tabs,
   TabsContent,
   TabsList,
@@ -183,98 +185,113 @@ export default function PurchasingPage() {
           <TabsTrigger value="returns">Returns</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="orders">
-          <Card>
-            <CardHeader>
-              <CardTitle>Purchase Orders</CardTitle>
-            </CardHeader>
-            <CardBody className="divide-y divide-eta-border">
-              {(ordersQuery.data?.data ?? []).length === 0 ? (
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No purchase orders yet"
-                  description="Create a purchase order to start procuring stock from suppliers."
-                />
-              ) : (
-                (ordersQuery.data?.data ?? []).map((po) => (
-                  <div
-                    key={po.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-mono text-xs font-semibold">{po.po_number}</div>
-                      <div className="text-xs text-eta-muted">
-                        {po.supplier?.company_name ?? "Supplier"} • {po.order_date} •{" "}
-                        {formatCurrency(po.grand_total)}
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2">
+        <TabsContent value="orders" className="pt-2">
+          {(ordersQuery.data?.data ?? []).length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No purchase orders yet"
+              description="Create a purchase order to start procuring stock from suppliers."
+            />
+          ) : (
+            <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>PO #</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Order Date</TableHead>
+                  <TableHead align="right">Total</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead align="right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(ordersQuery.data?.data ?? []).map((po) => (
+                  <TableRow key={po.id}>
+                    <TableCell className="font-mono text-xs font-semibold">
+                      {po.po_number}
+                    </TableCell>
+                    <TableCell>{po.supplier?.company_name ?? "Supplier"}</TableCell>
+                    <TableCell className="text-xs text-eta-muted">{po.order_date}</TableCell>
+                    <TableCell align="right" className="font-mono font-medium">
+                      {formatCurrency(po.grand_total)}
+                    </TableCell>
+                    <TableCell>
                       <Badge
                         variant="soft"
                         color={po.status === "approved" ? "success" : "warning"}
                       >
                         {po.status}
                       </Badge>
-                      {po.status === "draft" && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => poActionMutation.mutate({ id: po.id, action: "submit" })}
-                        >
-                          Submit
-                        </Button>
-                      )}
-                      {(po.status === "draft" || po.status === "pending_approval") && (
-                        <Button
-                          variant="solid"
-                          color="primary"
-                          size="sm"
-                          onClick={() => poActionMutation.mutate({ id: po.id, action: "approve" })}
-                        >
-                          Approve
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardBody>
-          </Card>
+                    </TableCell>
+                    <TableCell align="right">
+                      <div className="inline-flex flex-wrap items-center justify-end gap-2">
+                        {po.status === "draft" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => poActionMutation.mutate({ id: po.id, action: "submit" })}
+                          >
+                            Submit
+                          </Button>
+                        )}
+                        {(po.status === "draft" || po.status === "pending_approval") && (
+                          <Button
+                            variant="solid"
+                            color="primary"
+                            size="sm"
+                            onClick={() => poActionMutation.mutate({ id: po.id, action: "approve" })}
+                          >
+                            Approve
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
 
-        <TabsContent value="receipts">
-          <Card>
-            <CardHeader>
-              <CardTitle>Goods Receipts (GRN)</CardTitle>
-            </CardHeader>
-            <CardBody className="divide-y divide-eta-border">
-              {(receiptsQuery.data?.data ?? []).length === 0 ? (
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No goods receipts yet"
-                  description="Goods receipts will appear here once deliveries are recorded."
-                />
-              ) : (
-                (receiptsQuery.data?.data ?? []).map((grn) => (
-                  <div
-                    key={grn.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-mono text-xs font-semibold">{grn.grn_number}</div>
-                      <div className="text-xs text-eta-muted">
-                        PO: {grn.purchase_order?.po_number ?? "—"} • {grn.warehouse?.name ?? "WH"}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
+        <TabsContent value="receipts" className="pt-2">
+          {(receiptsQuery.data?.data ?? []).length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No goods receipts yet"
+              description="Goods receipts will appear here once deliveries are recorded."
+            />
+          ) : (
+            <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>GRN #</TableHead>
+                  <TableHead>PO Reference</TableHead>
+                  <TableHead>Warehouse</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead align="right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(receiptsQuery.data?.data ?? []).map((grn) => (
+                  <TableRow key={grn.id}>
+                    <TableCell className="font-mono text-xs font-semibold">
+                      {grn.grn_number}
+                    </TableCell>
+                    <TableCell className="font-mono text-xs text-eta-muted">
+                      {grn.purchase_order?.po_number ?? "—"}
+                    </TableCell>
+                    <TableCell>{grn.warehouse?.name ?? "WH"}</TableCell>
+                    <TableCell>
                       <Badge
                         variant="soft"
                         color={grn.status === "confirmed" ? "success" : "warning"}
                       >
                         {grn.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell align="right">
                       {grn.status === "draft" && (
                         <Button
                           variant="solid"
@@ -285,90 +302,99 @@ export default function PurchasingPage() {
                           Confirm
                         </Button>
                       )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardBody>
-          </Card>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
 
-        <TabsContent value="invoices">
-          <Card>
-            <CardHeader>
-              <CardTitle>Supplier Invoices</CardTitle>
-            </CardHeader>
-            <CardBody className="divide-y divide-eta-border">
-              {(invoicesQuery.data?.data ?? []).length === 0 ? (
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No supplier invoices yet"
-                  description="Supplier invoices will appear here once billed."
-                />
-              ) : (
-                (invoicesQuery.data?.data ?? []).map((inv) => (
-                  <div
-                    key={inv.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-mono text-xs font-semibold">{inv.invoice_number}</div>
-                      <div className="text-xs text-eta-muted">
-                        {inv.supplier?.company_name ?? "Supplier"} • Due {inv.due_date}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3 font-mono text-xs">
-                      <span>
-                        Paid {formatCurrency(inv.paid_amount)} / {formatCurrency(inv.grand_total)}
-                      </span>
+        <TabsContent value="invoices" className="pt-2">
+          {(invoicesQuery.data?.data ?? []).length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No supplier invoices yet"
+              description="Supplier invoices will appear here once billed."
+            />
+          ) : (
+            <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice #</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Due Date</TableHead>
+                  <TableHead align="right">Paid / Total</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(invoicesQuery.data?.data ?? []).map((inv) => (
+                  <TableRow key={inv.id}>
+                    <TableCell className="font-mono text-xs font-semibold">
+                      {inv.invoice_number}
+                    </TableCell>
+                    <TableCell>{inv.supplier?.company_name ?? "Supplier"}</TableCell>
+                    <TableCell className="text-xs text-eta-muted">{inv.due_date}</TableCell>
+                    <TableCell align="right" className="font-mono text-xs">
+                      {formatCurrency(inv.paid_amount)} / {formatCurrency(inv.grand_total)}
+                    </TableCell>
+                    <TableCell>
                       <Badge
                         variant="soft"
                         color={inv.payment_status === "paid" ? "success" : "warning"}
                       >
                         {inv.payment_status}
                       </Badge>
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardBody>
-          </Card>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
 
-        <TabsContent value="returns">
-          <Card>
-            <CardHeader>
-              <CardTitle>Purchase Returns</CardTitle>
-            </CardHeader>
-            <CardBody className="divide-y divide-eta-border">
-              {(returnsQuery.data?.data ?? []).length === 0 ? (
-                <EmptyState
-                  variant="bordered"
-                  size="sm"
-                  title="No purchase returns yet"
-                  description="Purchase returns will appear here when items are returned to suppliers."
-                />
-              ) : (
-                (returnsQuery.data?.data ?? []).map((ret) => (
-                  <div
-                    key={ret.id}
-                    className="flex flex-col gap-2 py-3 text-sm sm:flex-row sm:items-center sm:justify-between"
-                  >
-                    <div>
-                      <div className="font-mono text-xs font-semibold">{ret.return_number}</div>
-                      <div className="text-xs text-eta-muted">
-                        {ret.supplier?.company_name ?? "Supplier"} • {ret.reason}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs">{formatCurrency(ret.total_amount)}</span>
+        <TabsContent value="returns" className="pt-2">
+          {(returnsQuery.data?.data ?? []).length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              size="sm"
+              title="No purchase returns yet"
+              description="Purchase returns will appear here when items are returned to suppliers."
+            />
+          ) : (
+            <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Return #</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead align="right">Total Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead align="right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(returnsQuery.data?.data ?? []).map((ret) => (
+                  <TableRow key={ret.id}>
+                    <TableCell className="font-mono text-xs font-semibold">
+                      {ret.return_number}
+                    </TableCell>
+                    <TableCell>{ret.supplier?.company_name ?? "Supplier"}</TableCell>
+                    <TableCell className="text-eta-muted">{ret.reason}</TableCell>
+                    <TableCell align="right" className="font-mono text-xs font-medium">
+                      {formatCurrency(ret.total_amount)}
+                    </TableCell>
+                    <TableCell>
                       <Badge
                         variant="soft"
                         color={ret.status === "confirmed" ? "success" : "warning"}
                       >
                         {ret.status}
                       </Badge>
+                    </TableCell>
+                    <TableCell align="right">
                       {ret.status === "draft" && (
                         <Button
                           variant="solid"
@@ -379,12 +405,12 @@ export default function PurchasingPage() {
                           Confirm
                         </Button>
                       )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </CardBody>
-          </Card>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </TabsContent>
       </Tabs>
 

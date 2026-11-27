@@ -19,6 +19,7 @@ import {
   CardBody,
   CardHeader,
   CardTitle,
+  ChartContainer,
   EmptyState,
   Heading,
   SegmentedControl,
@@ -91,8 +92,14 @@ function buildDailyChartSeries(
   rawTrend: Array<{ date: string; revenue: string }>,
   period?: { from: string; to: string },
   hasCustomFilter = false
-): Array<{ date: string; revenue: number }> {
-  if (rawTrend.length === 0) return [];
+): { points: Array<{ date: string; revenue: number }>; from: string; to: string } {
+  if (rawTrend.length === 0) {
+    return {
+      points: [],
+      from: period?.from ?? "",
+      to: period?.to ?? "",
+    };
+  }
 
   const revenueByIso = new Map<string, number>();
   let earliestSale: Date | null = null;
@@ -109,7 +116,7 @@ function buildDailyChartSeries(
   }
 
   const endDate = (period?.to ? parseLocalIso(period.to) : null) ?? latestSale ?? new Date();
-  const minWindowStart = addDays(endDate, -13); // Minimum 14 slots so bars stay sleek (~28px)
+  const minWindowStart = addDays(endDate, -17); // Minimum 18 slots for balanced bar width across desktop & laptop
 
   let startDate: Date;
   if (hasCustomFilter && period?.from) {
@@ -122,24 +129,28 @@ function buildDailyChartSeries(
   }
 
   const totalDays = Math.min(60, Math.max(1, diffDays(startDate, endDate) + 1));
-  const compactLabel = totalDays > 14;
-  const series: Array<{ date: string; revenue: number }> = [];
+  const useNumericDate = totalDays > 12;
+  const points: Array<{ date: string; revenue: number }> = [];
 
   for (let i = 0; i < totalDays; i++) {
     const cur = addDays(startDate, i);
     const iso = toIsoDate(cur);
     const dayNum = String(cur.getDate()).padStart(2, "0");
-    const label = compactLabel
+    const label = useNumericDate
       ? `${dayNum}/${String(cur.getMonth() + 1).padStart(2, "0")}`
       : `${cur.getDate()} ${SHORT_MONTHS[cur.getMonth()]}`;
 
-    series.push({
+    points.push({
       date: label,
       revenue: revenueByIso.get(iso) ?? 0,
     });
   }
 
-  return series;
+  return {
+    points,
+    from: toIsoDate(startDate),
+    to: toIsoDate(endDate),
+  };
 }
 
 export default function DashboardHomePage() {
@@ -163,11 +174,18 @@ export default function DashboardHomePage() {
   });
 
   const data = dashboardQuery.data?.data;
-  const chartData = buildDailyChartSeries(
+  const chartSeries = buildDailyChartSeries(
     data?.daily_trend ?? [],
     data?.period,
     Boolean(dateFrom || dateTo)
   );
+  const chartData = chartSeries.points;
+  const chartSubtitle =
+    chartSeries.from && chartSeries.to
+      ? `${chartSeries.from} to ${chartSeries.to}`
+      : data?.period
+        ? `${data.period.from} to ${data.period.to}`
+        : "Last 30 days";
 
   return (
     <div className="space-y-6">
@@ -332,26 +350,43 @@ export default function DashboardHomePage() {
       {roleView !== "cashier" && (
         <div className="grid gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2">
-            <BarChart
-              title="Daily Revenue Trend"
-              description={data?.period ? `${data.period.from} to ${data.period.to}` : "Last 30 days"}
-              data={chartData}
-              indexKey="date"
-              series={[{ key: "revenue", label: "Revenue", color: "primary" }]}
-              height={260}
-              variant="surface"
-              valueFormatter={(value, seriesKey) =>
-                seriesKey ? formatCurrency(value) : formatAxisCompactIdr(value)
-              }
-              isLoading={dashboardQuery.isLoading}
-              emptyState={
-                <EmptyState
-                  size="sm"
-                  title="No sales data"
-                  description="No sales data for the selected period."
-                />
-              }
-            />
+            {dashboardQuery.isLoading ? (
+              <ChartContainer
+                variant="surface"
+                title="Daily Revenue Trend"
+                description={chartSubtitle}
+                height={260}
+                isLoading
+              />
+            ) : chartData.length === 0 ? (
+              <ChartContainer
+                variant="surface"
+                title="Daily Revenue Trend"
+                description={chartSubtitle}
+                height={260}
+                isEmpty
+                emptyState={
+                  <EmptyState
+                    size="sm"
+                    title="No sales data"
+                    description="No sales data for the selected period."
+                  />
+                }
+              />
+            ) : (
+              <BarChart
+                title="Daily Revenue Trend"
+                description={chartSubtitle}
+                data={chartData}
+                indexKey="date"
+                series={[{ key: "revenue", label: "Revenue", color: "primary" }]}
+                height={260}
+                variant="surface"
+                valueFormatter={(value, seriesKey) =>
+                  seriesKey ? formatCurrency(value) : formatAxisCompactIdr(value)
+                }
+              />
+            )}
           </div>
 
           <Card variant="elevated" padding="md">

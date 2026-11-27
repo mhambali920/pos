@@ -219,52 +219,43 @@ export default function ReportsPage() {
             </StatGroup>
           )}
 
-          <Card variant="elevated" padding="none">
-            <CardHeader className="px-6 pt-5 pb-3">
-              <CardTitle className="capitalize">{activeTab} Report Details</CardTitle>
-            </CardHeader>
-            <CardBody>
-              {reportQuery.isLoading ? (
-                <div className="space-y-2 p-6 pt-0">
-                  {[1, 2, 3].map((n) => (
-                    <Skeleton key={n} variant="rounded" height={44} />
+          {reportQuery.isLoading ? (
+            <div className="space-y-2.5">
+              {[1, 2, 3].map((n) => (
+                <Skeleton key={n} variant="rounded" height={44} />
+              ))}
+            </div>
+          ) : !report || report.rows.length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              icon={<BarChart3 className="h-6 w-6" />}
+              title="No records for this period"
+              description="Adjust the date filters to view report details."
+            />
+          ) : (
+            <Table variant="hoverable" size="sm" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  {Object.keys(report.rows[0]).map((col) => (
+                    <TableHead key={col} className="capitalize">
+                      {col.replaceAll("_", " ")}
+                    </TableHead>
                   ))}
-                </div>
-              ) : !report || report.rows.length === 0 ? (
-                <div className="p-6 pt-0">
-                  <EmptyState
-                    variant="bordered"
-                    icon={<BarChart3 className="h-6 w-6" />}
-                    title="No records for this period"
-                    description="Adjust the date filters to view report details."
-                  />
-                </div>
-              ) : (
-                <Table variant="hoverable" size="sm">
-                  <TableHeader>
-                    <TableRow>
-                      {Object.keys(report.rows[0]).map((col) => (
-                        <TableHead key={col} className="capitalize">
-                          {col.replaceAll("_", " ")}
-                        </TableHead>
-                      ))}
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {report.rows.map((row, idx) => (
-                      <TableRow key={idx}>
-                        {Object.values(row).map((cell, cIdx) => (
-                          <TableCell key={cIdx} className="font-mono text-xs">
-                            {String(cell)}
-                          </TableCell>
-                        ))}
-                      </TableRow>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {report.rows.map((row, idx) => (
+                  <TableRow key={idx}>
+                    {Object.values(row).map((cell, cIdx) => (
+                      <TableCell key={cIdx} className="font-mono text-xs">
+                        {String(cell)}
+                      </TableCell>
                     ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardBody>
-          </Card>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
       )}
 
@@ -336,111 +327,93 @@ export default function ReportsPage() {
             </CardBody>
           </Card>
 
-          <Card variant="elevated" padding="none">
-            <CardHeader className="px-6 pt-5 pb-3">
-              <CardTitle>Active Promotions</CardTitle>
-            </CardHeader>
-            <CardBody>
-              {promotions.length === 0 ? (
-                <div className="p-6 pt-0">
-                  <EmptyState
-                    variant="bordered"
-                    icon={<Tag className="h-6 w-6" />}
-                    title="No promotions configured yet"
-                    description="Create a discount or coupon rule above."
-                  />
-                </div>
-              ) : (
-                <Table variant="hoverable" size="sm">
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Code</TableHead>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Stacking</TableHead>
-                      <TableHead align="right">Priority</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {promotions.map((p) => (
-                      <TableRow key={p.id}>
-                        <TableCell className="font-mono text-xs font-semibold">{p.code}</TableCell>
-                        <TableCell className="text-sm">{p.name}</TableCell>
-                        <TableCell>
-                          <Badge variant="soft" color="neutral">
-                            {p.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="soft" color={p.is_stackable ? "success" : "warning"}>
-                            {p.is_stackable ? "Stackable" : "Exclusive"}
-                          </Badge>
-                        </TableCell>
-                        <TableCell align="right" className="font-mono text-xs text-eta-muted">
-                          {p.priority}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardBody>
-          </Card>
+          {promotions.length === 0 ? (
+            <EmptyState
+              variant="bordered"
+              icon={<Tag className="h-6 w-6" />}
+              title="No promotions configured yet"
+              description="Create a discount or coupon rule above."
+            />
+          ) : (
+            <Table variant="hoverable" size="sm" containerClassName="rounded-xl border border-eta-border">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Code</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Stacking</TableHead>
+                  <TableHead align="right">Priority</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {promotions.map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell className="font-mono text-xs font-semibold">{p.code}</TableCell>
+                    <TableCell className="text-sm">{p.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="soft" color="neutral">
+                        {p.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="soft" color={p.is_stackable ? "success" : "warning"}>
+                        {p.is_stackable ? "Stackable" : "Exclusive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell align="right" className="font-mono text-xs text-eta-muted">
+                      {p.priority}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </div>
       )}
 
       {activeTab === "exports" && (
-        <Card variant="elevated" padding="none">
-          <CardHeader className="px-6 pt-5 pb-3">
-            <CardTitle>Async Export History</CardTitle>
-          </CardHeader>
-          <CardBody>
-            {exportsList.length === 0 ? (
-              <div className="p-6 pt-0">
-                <EmptyState
-                  variant="bordered"
-                  icon={<FileSpreadsheet className="h-6 w-6" />}
-                  title="No exports queued yet"
-                  description="Trigger a CSV, Excel, or PDF export from any report tab."
-                />
-              </div>
-            ) : (
-              <Table variant="hoverable" size="sm">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Report</TableHead>
-                    <TableHead>Format</TableHead>
-                    <TableHead>Requested At</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {exportsList.map((exp) => (
-                    <TableRow key={exp.id}>
-                      <TableCell className="font-medium capitalize">
-                        {exp.report_type} Report
-                      </TableCell>
-                      <TableCell className="font-mono text-xs uppercase">
-                        {exp.format}
-                      </TableCell>
-                      <TableCell className="text-xs text-eta-muted">
-                        {new Date(exp.created_at).toLocaleString()}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant="soft"
-                          color={exp.status === "completed" ? "success" : "warning"}
-                        >
-                          {exp.status}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardBody>
-        </Card>
+        exportsList.length === 0 ? (
+          <EmptyState
+            variant="bordered"
+            icon={<FileSpreadsheet className="h-6 w-6" />}
+            title="No exports queued yet"
+            description="Trigger a CSV, Excel, or PDF export from any report tab."
+          />
+        ) : (
+          <Table variant="hoverable" size="sm" containerClassName="rounded-xl border border-eta-border">
+            <TableHeader>
+              <TableRow>
+                <TableHead>Report</TableHead>
+                <TableHead>Format</TableHead>
+                <TableHead>Requested At</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {exportsList.map((exp) => (
+                <TableRow key={exp.id}>
+                  <TableCell className="font-medium capitalize">
+                    {exp.report_type} Report
+                  </TableCell>
+                  <TableCell className="font-mono text-xs uppercase">
+                    {exp.format}
+                  </TableCell>
+                  <TableCell className="text-xs text-eta-muted">
+                    {new Date(exp.created_at).toLocaleString()}
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="soft"
+                      color={exp.status === "completed" ? "success" : "warning"}
+                    >
+                      {exp.status}
+                    </Badge>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )
       )}
     </div>
   );
