@@ -1,24 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Pencil, Plus } from "lucide-react";
 import {
   Badge,
   Button,
-  Card,
-  CardBody,
-  CardHeader,
-  CardTitle,
   EmptyState,
-  FormField,
   Heading,
-  Input,
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  IconButton,
   Skeleton,
   Table,
   TableBody,
@@ -30,21 +20,36 @@ import {
   TabsList,
   TabsTrigger,
   Text,
-  useToast,
 } from "@eta-ui/react";
-import { apiFetch, ApiError } from "@/lib/api";
-import type { BrandItem, CategoryItem, TaxItem, UnitItem, WarehouseItem } from "@/lib/types";
+import {
+  CatalogItemSheet,
+  type CatalogEditingItem,
+  type CatalogTabKey,
+} from "@/components/categories/catalog-item-sheet";
+import { apiFetch } from "@/lib/api";
+import type {
+  BrandItem,
+  CategoryItem,
+  StoreSummary,
+  TaxItem,
+  UnitItem,
+  WarehouseItem,
+} from "@/lib/types";
+import { useAuthStore } from "@/stores/auth-store";
 
-type TabKey = "categories" | "brands" | "units" | "taxes" | "warehouses";
+const TABS: Array<{ key: CatalogTabKey; label: string; addLabel: string }> = [
+  { key: "categories", label: "Categories", addLabel: "Add Category" },
+  { key: "brands", label: "Brands", addLabel: "Add Brand" },
+  { key: "units", label: "Units", addLabel: "Add Unit" },
+  { key: "taxes", label: "Taxes", addLabel: "Add Tax Rule" },
+  { key: "warehouses", label: "Warehouses", addLabel: "Add Warehouse" },
+];
 
 export default function CategoriesAndCatalogConfigPage() {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [tab, setTab] = useState<TabKey>("categories");
-  const [code, setCode] = useState("");
-  const [name, setName] = useState("");
-  const [taxRate, setTaxRate] = useState("11");
-  const [taxType, setTaxType] = useState<"exclusive" | "inclusive">("exclusive");
+  const { user } = useAuthStore();
+  const [tab, setTab] = useState<CatalogTabKey>("categories");
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editing, setEditing] = useState<CatalogEditingItem>(null);
 
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
@@ -76,37 +81,24 @@ export default function CategoriesAndCatalogConfigPage() {
     enabled: tab === "warehouses",
   });
 
-  const createMutation = useMutation({
-    mutationFn: async () => {
-      if (tab === "taxes") {
-        return apiFetch("/taxes", {
-          method: "POST",
-          body: { code, name, rate: Number(taxRate), type: taxType },
-        });
-      }
-      return apiFetch(`/${tab}`, {
-        method: "POST",
-        body: { code, name },
-      });
-    },
-    onSuccess: () => {
-      toast.success("Record created successfully.");
-      setCode("");
-      setName("");
-      void queryClient.invalidateQueries({ queryKey: [tab] });
-    },
-    onError: (err) => {
-      toast.error(err instanceof ApiError ? err.message : "Failed to create record.");
-    },
+  const storesQuery = useQuery({
+    queryKey: ["stores"],
+    queryFn: () => apiFetch<StoreSummary[]>("/stores"),
+    enabled: tab === "warehouses",
+    retry: false,
   });
 
-  const tabs: Array<{ key: TabKey; label: string }> = [
-    { key: "categories", label: "Categories" },
-    { key: "brands", label: "Brands" },
-    { key: "units", label: "Units" },
-    { key: "taxes", label: "Taxes" },
-    { key: "warehouses", label: "Warehouses" },
-  ];
+  const activeTabMeta = TABS.find((t) => t.key === tab) ?? TABS[0];
+
+  const openCreateSheet = () => {
+    setEditing(null);
+    setSheetOpen(true);
+  };
+
+  const openEditSheet = (target: CatalogEditingItem) => {
+    setEditing(target);
+    setSheetOpen(true);
+  };
 
   const isLoading =
     (tab === "categories" && categoriesQuery.isLoading) ||
@@ -115,95 +107,52 @@ export default function CategoriesAndCatalogConfigPage() {
     (tab === "taxes" && taxesQuery.isLoading) ||
     (tab === "warehouses" && warehousesQuery.isLoading);
 
+  const categories = categoriesQuery.data?.data ?? [];
+  const brands = brandsQuery.data?.data ?? [];
+  const units = unitsQuery.data?.data ?? [];
+  const taxes = taxesQuery.data?.data ?? [];
+  const warehouses = warehousesQuery.data?.data ?? [];
+  const stores = storesQuery.data?.data ?? user?.stores ?? [];
+
   return (
     <div className="space-y-6">
-      <div>
-        <Heading as="h1" size="xl" weight="semibold">
-          Catalog Setup
-        </Heading>
-        <Text size="sm" variant="muted" className="mt-0.5">
-          Manage product categories, brands, units of measurement, taxes, and warehouses.
-        </Text>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <Heading as="h1" size="xl" weight="semibold">
+            Catalog Setup
+          </Heading>
+          <Text size="sm" variant="muted" className="mt-0.5">
+            Manage product categories, brands, units of measurement, taxes, and warehouses.
+          </Text>
+        </div>
+
+        <Button
+          variant="solid"
+          color="primary"
+          leftIcon={<Plus className="h-4 w-4" />}
+          onClick={openCreateSheet}
+        >
+          {activeTabMeta.addLabel}
+        </Button>
       </div>
 
-      <Tabs value={tab} onValueChange={(v) => setTab(v as TabKey)} variant="underline">
+      <Tabs
+        value={tab}
+        onValueChange={(v) => {
+          setTab(v as CatalogTabKey);
+          setSheetOpen(false);
+          setEditing(null);
+        }}
+        variant="underline"
+      >
         <TabsList>
-          {tabs.map((t) => (
+          {TABS.map((t) => (
             <TabsTrigger key={t.key} value={t.key}>
               {t.label}
             </TabsTrigger>
           ))}
         </TabsList>
       </Tabs>
-
-      <Card variant="elevated" padding="md">
-        <CardHeader>
-          <CardTitle className="capitalize">Quick Create ({tab})</CardTitle>
-        </CardHeader>
-        <CardBody>
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              if (!code.trim() || !name.trim()) return;
-              createMutation.mutate();
-            }}
-            className="flex flex-wrap items-end gap-3"
-          >
-            <FormField label="Code" className="w-36">
-              <Input
-                id="catalog-code"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-                placeholder="CODE-01"
-              />
-            </FormField>
-            <FormField label="Name" className="min-w-52 flex-1">
-              <Input
-                id="catalog-name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Display name"
-              />
-            </FormField>
-            {tab === "taxes" && (
-              <>
-                <FormField label="Rate (%)" className="w-28">
-                  <Input
-                    id="tax-rate"
-                    type="number"
-                    step="0.01"
-                    value={taxRate}
-                    onChange={(e) => setTaxRate(e.target.value)}
-                  />
-                </FormField>
-                <FormField label="Type" className="w-36">
-                  <Select
-                    value={taxType}
-                    onValueChange={(v) => setTaxType((v as "exclusive" | "inclusive") ?? "exclusive")}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="exclusive">Exclusive</SelectItem>
-                      <SelectItem value="inclusive">Inclusive</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormField>
-              </>
-            )}
-            <Button
-              type="submit"
-              variant="solid"
-              color="primary"
-              isLoading={createMutation.isPending}
-              leftIcon={<Plus className="h-4 w-4" />}
-            >
-              Add
-            </Button>
-          </form>
-        </CardBody>
-      </Card>
 
       {isLoading ? (
         <div className="space-y-2.5">
@@ -212,12 +161,17 @@ export default function CategoriesAndCatalogConfigPage() {
           <Skeleton variant="rounded" height={40} />
         </div>
       ) : tab === "categories" ? (
-        (categoriesQuery.data?.data ?? []).length === 0 ? (
+        categories.length === 0 ? (
           <EmptyState
             variant="bordered"
             size="sm"
             title="No categories yet"
-            description="Create your first product category using the form above."
+            description="Create your first product category."
+            action={
+              <Button variant="solid" color="primary" size="sm" onClick={openCreateSheet}>
+                {activeTabMeta.addLabel}
+              </Button>
+            }
           />
         ) : (
           <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
@@ -226,11 +180,12 @@ export default function CategoriesAndCatalogConfigPage() {
                 <TableHead>Code</TableHead>
                 <TableHead>Name</TableHead>
                 <TableHead>Parent</TableHead>
-                <TableHead align="right">Status</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead align="right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(categoriesQuery.data?.data ?? []).map((item) => (
+              {categories.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs text-eta-muted">
                     {item.code}
@@ -239,10 +194,19 @@ export default function CategoriesAndCatalogConfigPage() {
                   <TableCell className="text-eta-muted">
                     {item.parent ? item.parent.name : "—"}
                   </TableCell>
-                  <TableCell align="right">
+                  <TableCell>
                     <Badge variant="soft" color={item.is_active ? "success" : "neutral"}>
                       {item.is_active ? "Active" : "Inactive"}
                     </Badge>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      icon={<Pencil className="h-4 w-4" />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Edit category ${item.name}`}
+                      onClick={() => openEditSheet({ tab: "categories", item })}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -250,12 +214,17 @@ export default function CategoriesAndCatalogConfigPage() {
           </Table>
         )
       ) : tab === "brands" ? (
-        (brandsQuery.data?.data ?? []).length === 0 ? (
+        brands.length === 0 ? (
           <EmptyState
             variant="bordered"
             size="sm"
             title="No brands yet"
-            description="Create your first product brand using the form above."
+            description="Create your first product brand."
+            action={
+              <Button variant="solid" color="primary" size="sm" onClick={openCreateSheet}>
+                {activeTabMeta.addLabel}
+              </Button>
+            }
           />
         ) : (
           <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
@@ -263,20 +232,30 @@ export default function CategoriesAndCatalogConfigPage() {
               <TableRow>
                 <TableHead>Code</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead align="right">Status</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead align="right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(brandsQuery.data?.data ?? []).map((item) => (
+              {brands.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs text-eta-muted">
                     {item.code}
                   </TableCell>
                   <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell align="right">
+                  <TableCell>
                     <Badge variant="soft" color={item.is_active ? "success" : "neutral"}>
                       {item.is_active ? "Active" : "Inactive"}
                     </Badge>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      icon={<Pencil className="h-4 w-4" />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Edit brand ${item.name}`}
+                      onClick={() => openEditSheet({ tab: "brands", item })}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -284,12 +263,17 @@ export default function CategoriesAndCatalogConfigPage() {
           </Table>
         )
       ) : tab === "units" ? (
-        (unitsQuery.data?.data ?? []).length === 0 ? (
+        units.length === 0 ? (
           <EmptyState
             variant="bordered"
             size="sm"
             title="No units yet"
-            description="Create your first unit of measurement using the form above."
+            description="Create your first unit of measurement."
+            action={
+              <Button variant="solid" color="primary" size="sm" onClick={openCreateSheet}>
+                {activeTabMeta.addLabel}
+              </Button>
+            }
           />
         ) : (
           <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
@@ -297,20 +281,30 @@ export default function CategoriesAndCatalogConfigPage() {
               <TableRow>
                 <TableHead>Code</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead align="right">Precision</TableHead>
+                <TableHead>Precision</TableHead>
+                <TableHead align="right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(unitsQuery.data?.data ?? []).map((item) => (
+              {units.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs text-eta-muted">
                     {item.code}
                   </TableCell>
                   <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell align="right">
+                  <TableCell>
                     <Badge variant="soft" color="neutral">
                       {item.allow_decimal ? "Decimal" : "Integer"}
                     </Badge>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      icon={<Pencil className="h-4 w-4" />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Edit unit ${item.name}`}
+                      onClick={() => openEditSheet({ tab: "units", item })}
+                    />
                   </TableCell>
                 </TableRow>
               ))}
@@ -318,12 +312,17 @@ export default function CategoriesAndCatalogConfigPage() {
           </Table>
         )
       ) : tab === "taxes" ? (
-        (taxesQuery.data?.data ?? []).length === 0 ? (
+        taxes.length === 0 ? (
           <EmptyState
             variant="bordered"
             size="sm"
             title="No taxes yet"
-            description="Create your first tax rule using the form above."
+            description="Create your first tax rule."
+            action={
+              <Button variant="solid" color="primary" size="sm" onClick={openCreateSheet}>
+                {activeTabMeta.addLabel}
+              </Button>
+            }
           />
         ) : (
           <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
@@ -331,17 +330,19 @@ export default function CategoriesAndCatalogConfigPage() {
               <TableRow>
                 <TableHead>Code</TableHead>
                 <TableHead>Name</TableHead>
-                <TableHead align="right">Rate &amp; Type</TableHead>
+                <TableHead>Rate &amp; Type</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead align="right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {(taxesQuery.data?.data ?? []).map((item) => (
+              {taxes.map((item) => (
                 <TableRow key={item.id}>
                   <TableCell className="font-mono text-xs text-eta-muted">
                     {item.code}
                   </TableCell>
                   <TableCell className="font-medium">{item.name}</TableCell>
-                  <TableCell align="right">
+                  <TableCell>
                     <div className="inline-flex items-center gap-2">
                       <Badge variant="solid" color="primary">
                         {Number(item.rate)}%
@@ -351,17 +352,36 @@ export default function CategoriesAndCatalogConfigPage() {
                       </Badge>
                     </div>
                   </TableCell>
+                  <TableCell>
+                    <Badge variant="soft" color={item.is_active ? "success" : "neutral"}>
+                      {item.is_active ? "Active" : "Inactive"}
+                    </Badge>
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      icon={<Pencil className="h-4 w-4" />}
+                      variant="ghost"
+                      size="sm"
+                      aria-label={`Edit tax ${item.name}`}
+                      onClick={() => openEditSheet({ tab: "taxes", item })}
+                    />
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         )
-      ) : (warehousesQuery.data?.data ?? []).length === 0 ? (
+      ) : warehouses.length === 0 ? (
         <EmptyState
           variant="bordered"
           size="sm"
           title="No warehouses yet"
-          description="Create your first warehouse using the form above."
+          description="Create your first warehouse."
+          action={
+            <Button variant="solid" color="primary" size="sm" onClick={openCreateSheet}>
+              {activeTabMeta.addLabel}
+            </Button>
+          }
         />
       ) : (
         <Table variant="hoverable" containerClassName="rounded-xl border border-eta-border">
@@ -370,29 +390,66 @@ export default function CategoriesAndCatalogConfigPage() {
               <TableHead>Code</TableHead>
               <TableHead>Name</TableHead>
               <TableHead>Store</TableHead>
-              <TableHead align="right">Status</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead align="right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {(warehousesQuery.data?.data ?? []).map((item) => (
+            {warehouses.map((item) => (
               <TableRow key={item.id}>
                 <TableCell className="font-mono text-xs text-eta-muted">
                   {item.code}
                 </TableCell>
-                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell>
+                  <div className="font-medium text-eta-heading">{item.name}</div>
+                  {item.address && (
+                    <div className="text-xs text-eta-muted">{item.address}</div>
+                  )}
+                </TableCell>
                 <TableCell className="text-eta-muted">
-                  {item.store ? item.store.name : "—"}
+                  {item.store ? item.store.name : "Central / All"}
+                </TableCell>
+                <TableCell>
+                  <div className="inline-flex items-center gap-1.5">
+                    {item.is_default && (
+                      <Badge variant="soft" color="primary">
+                        Default
+                      </Badge>
+                    )}
+                    <Badge
+                      variant="soft"
+                      color={item.status === "active" ? "success" : "neutral"}
+                    >
+                      {item.status}
+                    </Badge>
+                  </div>
                 </TableCell>
                 <TableCell align="right">
-                  <Badge variant="soft" color={item.is_default ? "success" : "neutral"}>
-                    {item.is_default ? "Default" : item.status}
-                  </Badge>
+                  <IconButton
+                    icon={<Pencil className="h-4 w-4" />}
+                    variant="ghost"
+                    size="sm"
+                    aria-label={`Edit warehouse ${item.name}`}
+                    onClick={() => openEditSheet({ tab: "warehouses", item })}
+                  />
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       )}
+
+      <CatalogItemSheet
+        open={sheetOpen}
+        onOpenChange={(nextOpen) => {
+          setSheetOpen(nextOpen);
+          if (!nextOpen) setEditing(null);
+        }}
+        tab={tab}
+        editing={editing}
+        categories={categories}
+        stores={stores}
+      />
     </div>
   );
 }
